@@ -11,7 +11,7 @@ Run FastCode from this directory, following its [README](README.md):
 在此目录中按归档内的 [README](README.md) 安装运行：
 
 ```bash
-cd fastcode-v1
+cd FastCode
 pip install -r requirements.txt
 cp env.example .env    # add your API keys
 python web_app.py --host 0.0.0.0 --port 5000
