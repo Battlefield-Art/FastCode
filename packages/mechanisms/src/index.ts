@@ -2,7 +2,7 @@ export { describeToolCall, EconomyEngine, evidenceAllowed, isPrepared, normalize
 export type { CommandNormalizerOptions, EconomyEngineOptions, EconomyOutput, EconomyRequest, NativeEconomyRequest, Prepared } from './economy.ts'
 export { formatTokens, summarizeEconomy, summarizeShadow } from './receipts.ts'
 export { savedCard } from './card.ts'
-export type { CardStyle } from './card.ts'
+export type { CardNews, CardStyle } from './card.ts'
 export type { EconomySummary, ShadowSummary } from './receipts.ts'
 export { markSavingsTold, toldSavings, untoldSavings } from './conversation.ts'
 export { contextOverheadTokens, overheadOf, recordCost, RECALL_PROMPT_SNIPPET, SKILL_DESCRIPTION } from './overhead.ts'
@@ -24,7 +24,7 @@ export type { CatalogResult, CheckpointResult, ShadowSpan, ShadowStore } from '.
 export { checkRequirements, collectEvidence, commandHead, defaultRequirements, replayCase, verifyRules } from './evolution.ts'
 export type { EvidenceCase, PreservationRequirement, ReplayRow, RequirementResult, VerificationReport } from './evolution.ts'
 export {
-  acquireRunLock, activeRulesView, adoptedPhrase, adoptedRulesInUse, adoptionNews, BACKGROUND_TIMEOUT_MS, cancelEvolution, checkWorkspace, describeReport, disabledRules, evolveContext, learnerPrompt,
+  acquireRunLock, activeRulesView, adoptedPhrase, adoptedRulesInUse, adoptionNews, BACKGROUND_TIMEOUT_MS, cancelEvolution, checkWorkspace, describeReport, disabledRules, switchedOffNow, switchedOffPhrase, switchedOffPronoun, takeSwitchedOff, evolveContext, learnerPrompt,
   learnerRunning, LEARNER_INSTRUCTION, LEARNERS, newRunId, nodeBinary, onPath, prepareRun, processAlive, readEvolveStatus, readRunStatus, readScan,
   refreshScan, releaseRunLock, reviewActiveRules, ruleUse, runDirOf, runEvolution, runLearner, runnerMain, RULES_MD, scanEvidence, shellQuote,
   outcomeRules, outcomeSentence, pruneRuns, ruleChanges, startEvolution, takeAnnouncement, takeReadyNotice, workspaceCheck, workspaceTry, writeRunStatus,

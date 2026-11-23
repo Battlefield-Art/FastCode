@@ -7,7 +7,7 @@
  */
 import { matchesKey, truncateToWidth, visibleWidth } from '@earendil-works/pi-tui'
 import { formatTokens, outcomeSentence } from '@tokenwise/mechanisms'
-import type { EconomySummary, EvolveStatus, ShadowSummary } from '@tokenwise/mechanisms'
+import type { EconomySummary, EvolveStatus, ShadowSummary, SwitchedOff } from '@tokenwise/mechanisms'
 
 /** The members of pi's Theme the panel uses. */
 export interface PanelTheme {
@@ -25,6 +25,8 @@ export interface PanelData {
   readonly learner: { readonly label: string } | { readonly unavailable: string }
   /** Learned rules switched off by `output.learnedRules: false`. */
   readonly learnedRulesOff: boolean
+  /** Learned rules the monitor switched off that are still off, newest last. */
+  readonly switchedOff?: readonly (SwitchedOff & { readonly time: string })[]
   readonly now: number
 }
 
@@ -144,7 +146,10 @@ export function renderPanel(data: PanelData, state: PanelState, width: number, t
   }
 
   if (rules.active) {
-    const parts = [`${rules.rules.length} active`, rules.adoptedAt ? `adopted ${ago(rules.adoptedAt, data.now)}` : '',
+    // The monitor switching a rule off is an adoption of the rest: say which it was.
+    const off = rules.note?.startsWith('switched off ') ? rules.note.split('; ').filter(note => note.startsWith('switched off ')).length : 0
+    const changed = off === 1 ? 'one switched off' : off > 1 ? `${off} switched off` : 'adopted'
+    const parts = [`${rules.rules.length} active`, rules.adoptedAt ? `${changed} ${ago(rules.adoptedAt, data.now)}` : '',
       rules.gainTokens !== undefined ? `+${formatTokens(rules.gainTokens)} on ${rules.cases} outputs` : ''].filter(Boolean)
     row(`${label('Rules')}${parts.join(' · ')}${data.learnedRulesOff ? t.fg('warning', ' · off in config') : ''}`)
     const uses = new Map((scan?.rules ?? []).map(use => [use.id, use]))
@@ -176,9 +181,11 @@ export function renderPanel(data: PanelData, state: PanelState, width: number, t
     const sentence = `${outcomeSentence(run.outcome)} ${t.fg('dim', `· ${ago(run.finishedAt, data.now)}`)}`
     wrap(sentence, inner - LABEL - 2).forEach((part, i) => row(`${label(i === 0 ? 'Last run' : '')}${i === 0 ? mark : ' '} ${part}`))
   }
-  for (const item of scan?.disabled ?? []) {
-    wrap(`${t.fg('warning', item.id)} ${t.fg('dim', `— ${item.reason}`)}`, inner - LABEL).forEach((part, i) => row(`${label(i === 0 ? 'Switched off' : '')}${part}`))
-  }
+  const switchedOff = data.switchedOff ?? scan?.disabled ?? []
+  switchedOff.forEach((item, k) => {
+    const when = 'time' in item && typeof item.time === 'string' ? ` · ${ago(item.time, data.now)}` : ''
+    wrap(`${t.fg('warning', item.id)} ${t.fg('dim', `— ${item.reason}${when}`)}`, inner - LABEL).forEach((part, i) => row(`${label(i === 0 && k === 0 ? 'Switched off' : '')}${part}`))
+  })
   row()
 
   // Actions.

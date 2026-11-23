@@ -74,6 +74,25 @@ describe('the /tokenwise panel', () => {
     expect(done).toContain('r roll back')
   })
 
+  it('keeps listing rules the monitor switched off, and says the last change was one switched off', () => {
+    const off = renderPanel(data({
+      rules: { active: 'b'.repeat(64), rules: [{ id: 'sync-failed-files', transformation: 'noise-removal' }], history: 2, adoptedAt: '2026-10-14T11:59:00.000Z',
+        note: 'switched off etl-batch-progress: the agent asked for the original 3 of 7 times it shortened output' },
+      // The scan after the switch-off no longer names it.
+      scan: { schemaVersion: 1, time: '', evidence: 9, newEvidence: 0, leftTokens: 0, ready: false, opportunities: [], disabled: [], rules: [] },
+    }, { switchedOff: [{ id: 'etl-batch-progress', reason: 'the agent asked for the original 3 of 7 times it shortened output', recalls: 3, uses: 7, time: '2026-10-14T11:59:00.000Z' }] }),
+    {}, 140, plain).join('\n')
+    expect(off).toContain('1 active · one switched off 1 min ago')
+    expect(off).not.toContain('adopted 1 min ago')
+    expect(off.replace(/[ │]*\n[ │]+/gu, ' ')).toMatch(/Switched off +etl-batch-progress — the agent asked for the original 3 of 7 times it shortened output · 1 min ago/)
+    // One switch-off of two rules says how many.
+    const two = renderPanel(data({
+      rules: { active: 'b'.repeat(64), rules: [], history: 2, adoptedAt: '2026-10-14T11:59:00.000Z',
+        note: 'switched off a: the agent asked for the original 3 of 7 times it shortened output; switched off b: the agent asked for the original 4 of 9 times it shortened output' },
+    }), {}, 140, plain).join('\n')
+    expect(two).toContain('0 active · 2 switched off 1 min ago')
+  })
+
   it('asks before learning or rolling back, and says why it cannot learn', () => {
     expect(renderPanel(data({}), { confirming: 'learn' }, 100, plain).join('\n')).toContain('Learn with pi · deepseek-v4-pro?')
     expect(renderPanel(data({}), { confirming: 'off' }, 100, plain).join('\n')).toContain('Switch learned rules off?')

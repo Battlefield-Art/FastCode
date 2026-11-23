@@ -11,7 +11,8 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { adoptedPhrase, cancelEvolution, formatTokens, LEARNER_INSTRUCTION, LEARNERS, outcomeSentence, readEvolveStatus, refreshScan, startEvolution,
-  takeAnnouncement, takeReadyNotice } from '@tokenwise/mechanisms'
+  switchedOffPhrase, switchedOffPronoun, takeAnnouncement, takeReadyNotice, takeSwitchedOff } from '@tokenwise/mechanisms'
+import type { SwitchedOff } from '@tokenwise/mechanisms'
 import type { BackgroundOptions } from '@tokenwise/mechanisms'
 import { cliContext } from './context.ts'
 
@@ -37,6 +38,11 @@ export const NOTICE_HOSTS: ReadonlySet<string> = new Set(Object.keys(SKILL_COMMA
 /** The card's row on what TokenWise just learned (`adoptedPhrase`), with where to see or undo it. */
 export function learnedNews(host: string, phrase: string): string {
   return `${phrase} for every agent (${SKILL_COMMAND[host] ?? 'tokenwise checkup'} to see or undo)`
+}
+
+/** The card's row on rules the monitor switched off (`switchedOffPhrase`), with where to see them or bring them back. */
+export function switchedOffNews(host: string, items: readonly SwitchedOff[]): string {
+  return `${switchedOffPhrase(items)} (${SKILL_COMMAND[host] ?? 'tokenwise checkup'} to see or bring ${switchedOffPronoun(items)} back)`
 }
 
 /** Where each learner keeps its own state. */
@@ -121,6 +127,10 @@ export function startupNotice(host: string, env: NodeJS.ProcessEnv = process.env
     return `TokenWise learned something about your project: ${adoptedPhrase(done.outcome)} for every agent. See the before and after with ${skill}.`
   }
   if (done?.outcome) return `TokenWise learning: ${outcomeSentence(done.outcome)}.`
+  // A learned rule the monitor switched off: the person was told it saves tokens, so they hear that it stopped.
+  const off = takeSwitchedOff(dataDir, host, peek)
+  const it = switchedOffPronoun(off)
+  if (off.length) return `TokenWise switched off ${switchedOffPhrase(off)}. See ${it}, or bring ${it} back, with ${skill}.`
   const ready = takeReadyNotice(dataDir, host, peek)
   if (!ready?.length) return undefined
   const names = ready.slice(0, 3).map(item => item.command).join(', ')

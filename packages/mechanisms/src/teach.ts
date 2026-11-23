@@ -20,7 +20,7 @@ import { ensurePrivateDir, RuleStore, readRuleDirectory, removeTree } from '@tok
 import { collectEvidence, commandHead, replayCase, scriptRun } from './evolution.ts'
 import type { EvidenceCase, VerificationReport } from './evolution.ts'
 import {
-  activeRulesView, checkWorkspace, compileCandidate, evolveDir, newRunId, prepareRun, readJson, readOnlyArtifacts, ruleChanges, sameCommand, teachCheckerState, writeJsonAtomic,
+  activeRulesView, checkWorkspace, compileCandidate, coolingCommands, evolveDir, newRunId, prepareRun, readJson, readOnlyArtifacts, ruleChanges, sameCommand, teachCheckerState, writeJsonAtomic,
 } from './learning.ts'
 import type { EvolveContext } from './learning.ts'
 
@@ -106,6 +106,8 @@ export interface Checkup {
   readonly worth: readonly NoisyCommand[]
   /** Rules the person taught so far, across every adoption. */
   readonly taughtTotal: number
+  /** Commands left out of `worth` because the monitor switched their rule off this past week. */
+  readonly switchedOff: readonly string[]
 }
 
 export function checkup(context: EvolveContext, now = new Date()): Checkup {
@@ -143,13 +145,15 @@ export function checkup(context: EvolveContext, now = new Date()): Checkup {
     const command = counts ? [...counts].sort((a, b) => b[1] - a[1])[0]![0] : taughtBy.get(rule.id) ?? learnedFor.get(rule.id)
     return { id: rule.id, taught: taughtBy.has(rule.id), ...command === undefined ? {} : { command }, uses: [...counts?.values() ?? []].reduce((a, b) => a + b, 0) }
   })
-  const evidence = collectEvidence(records, readOnlyArtifacts(context), { maxCases: 2000 })
+  // A command whose rule was just switched off is not suggested again yet (the agent needed what it removed).
+  const cooling = coolingCommands(records, context.dataDir, now)
+  const evidence = collectEvidence(records, readOnlyArtifacts(context), { maxCases: 2000 }).filter(item => !cooling.has(commandHead(item.result.command)))
   const set = activeSet(context.dataDir)
   let worth: NoisyCommand[]
   try { worth = noisyCommands(evidence, createPolicy(context.economy.filterOptions, set), context.economy.minimumSavedTokens) } finally { set?.dispose() }
   return { outputs, hosts: [...hosts].sort(), ...since === undefined ? {} : { since },
     shortened: { outputs: shortened, readShare: raw ? read / raw : 1, byLearnedRules: byLearned }, rules, worth,
-    taughtTotal: new Set(history.flatMap(adoption => adoption.taught?.rules ?? [])).size }
+    taughtTotal: new Set(history.flatMap(adoption => adoption.taught?.rules ?? [])).size, switchedOff: [...cooling].sort() }
 }
 
 // ——— Teaching one command ———
@@ -263,7 +267,8 @@ export function startTeach(context: EvolveContext, command: string, checker: rea
     let worth: NoisyCommand[], short: boolean
     try {
       const policy = createPolicy(context.economy.filterOptions, set)
-      worth = noisyCommands(evidence, policy, context.economy.minimumSavedTokens)
+      const cooling = coolingCommands(context.readJournal({}), context.dataDir, now)
+      worth = noisyCommands(evidence.filter(item => !cooling.has(commandHead(item.result.command))), policy, context.economy.minimumSavedTokens)
       // Under 100 tokens, an output is not worth a rule (the same floor learnerCases uses).
       short = evidence.filter(item => sameCommand(commandHead(item.result.command), wanted))
         .every(item => replayCase(policy, item, { minimumSavedTokens: context.economy.minimumSavedTokens }).rawTokens < 100)

@@ -45,9 +45,13 @@ export function checkupCommand(json: boolean): number {
       text.push(`  ${rule.id.padEnd(28)} ${rule.taught ? 'taught by you' : 'learned'}${rule.command ? `, for ${rule.command}` : ''}; shortened ${plural(rule.uses, 'output')}`)
     }
   } else text.push('', 'No learned rules in use yet.')
+  const off = result.switchedOff.join(', ')
+  const why = `TokenWise switched off ${result.switchedOff.length === 1 ? 'its rule' : 'their rules'} this week because the agent needed what ${result.switchedOff.length === 1 ? 'it' : 'they'} removed`
   if (result.worth.length) {
     text.push('', 'Worth teaching (output TokenWise still leaves long):', ...worthList(result.worth), '', `Teach one: tokenwise teach "${result.worth[0]!.command}"`)
-  } else text.push('', 'Nothing worth teaching right now: TokenWise already shortens the long output it has seen.')
+    if (off) text.push(`Left out: ${off}; ${why}.`)
+  } else if (off) text.push('', `Nothing worth teaching right now. ${off} still ${result.switchedOff.length === 1 ? 'comes' : 'come'} back long, but ${why}.`)
+  else text.push('', 'Nothing worth teaching right now: TokenWise already shortens the long output it has seen.')
   out(text.join('\n'))
   return 0
 }

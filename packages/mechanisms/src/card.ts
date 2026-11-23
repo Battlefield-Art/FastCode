@@ -52,16 +52,20 @@ const JAR_CELLS = 6
 /** Ease out: the count slows as it lands. */
 const ease = (p: number) => 1 - (1 - p) ** 3
 
+/** A row under the card, said once by its caller: what TokenWise just learned, or switched off. */
+export interface CardNews { readonly label: string; readonly text: string }
+
 /**
  * The card, or undefined when there is nothing to say. `news` is what a
  * learning run just taught TokenWise, as `adoptedPhrase` says it (with
- * where to see it), said once by the caller.
+ * where to see it), or another row with its own label.
  */
-export function savedCard(summary: ConversationSavings | undefined, style: CardStyle = {}, news?: string): string | undefined {
+export function savedCard(summary: ConversationSavings | undefined, style: CardStyle = {}, news?: string | CardNews): string | undefined {
   const saved = summary?.savedTokens ?? 0
   const paint = (rgb: Rgb, text: string, bold = false) => style.color ? `\x1b[${bold ? '1;' : ''}38;2;${rgb[0]};${rgb[1]};${rgb[2]}m${text}\x1b[0m` : text
   const title = style.untitled ? '' : `${paint(MINT, 'TokenWise', true)} · `
-  const learned = news ? `${paint(FILL[0]!, '✦')} ${paint(MINT, 'Just learned:', true)} ${news}` : undefined
+  const row = typeof news === 'string' ? { label: 'Just learned:', text: news } : news
+  const learned = row ? `${paint(FILL[0]!, '✦')} ${paint(MINT, row.label, true)} ${row.text}` : undefined
   if (!(saved > 0)) return learned && `${style.breakFirst ? '\n' : ''}${style.untitled ? '' : `${paint(MINT, 'TokenWise', true)} `}${learned}`
   const p = Math.min(1, Math.max(0, style.progress ?? 1))
   const share = summary!.seenTokens > 0 ? Math.min(100, 100 * saved / summary!.seenTokens) : 0

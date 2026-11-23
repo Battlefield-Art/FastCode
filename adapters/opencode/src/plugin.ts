@@ -9,7 +9,7 @@
  * LightShadow (./shadow.ts): OpenCode's compaction summary becomes a
  * checkpoint whose tool results `tokenwise_recall` reads again.
  */
-import { EconomyEngine, adoptionNews, describeToolCall, markSavingsTold, repeatReadCandidate, savedCard, untoldSavings } from '@tokenwise/mechanisms'
+import { EconomyEngine, adoptionNews, describeToolCall, markSavingsTold, repeatReadCandidate, savedCard, switchedOffPhrase, switchedOffPronoun, takeSwitchedOff, untoldSavings } from '@tokenwise/mechanisms'
 import type { ConversationSavings } from '@tokenwise/mechanisms'
 import { ECONOMY_SPEC, HOST_PROFILES, LIGHTSHADOW_SPEC, negotiate } from '@tokenwise/protocol'
 import type { ArtifactPort } from '@tokenwise/protocol'
@@ -134,15 +134,21 @@ export function createTokenWise(options: TokenWiseOpenCodeOptions = {}): (input:
       saying.add(sessionId)
       let savings: ConversationSavings | undefined
       let news: string | undefined
+      let off: readonly unknown[] = []
       try {
-        // Once after a learning run adopted rules, the card also says what TokenWise just learned (told with the card).
+        // Once after a learning run adopted rules, the card also says what TokenWise just learned (told with the card);
+        // else, once, a learned rule the monitor switched off since.
         await showNotice(client, async () => {
           savings = untoldSavings(read, dirs, HOST, sessionId)
           news = adoptionNews(configDir, HOST, true)
-          return savedCard(savings, { lines: true, untitled: true }, news && `${news} for every agent (@tokenwise to see or undo)`)
+          const switched = news ? [] : takeSwitchedOff(configDir, HOST, true)
+          off = switched
+          return savedCard(savings, { lines: true, untitled: true }, news ? `${news} for every agent (@tokenwise to see or undo)`
+            : switched.length ? { label: 'Switched off:', text: `${switchedOffPhrase(switched)} (@tokenwise to see or bring ${switchedOffPronoun(switched)} back)` } : undefined)
         }, async () => {
           if (savings) markSavingsTold(dataDir, HOST, sessionId, savings.savedTokens)
           if (news) adoptionNews(configDir, HOST)
+          if (off.length) takeSwitchedOff(configDir, HOST)
         }, 8_000)
       } finally { saying.delete(sessionId) }
     }

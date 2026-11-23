@@ -25,7 +25,7 @@ export const api = {
   cancel: () => call<{ ok: boolean }>('cancel', { method: 'POST' }),
   rules: (action: RulesAction) => call<{ ok: boolean; active: string | null }>('rules', { method: 'POST', body: { action } }),
   /** Shown once each: a run that ended, or commands now worth learning from. */
-  announcement: () => call<{ run: LearningPayload['evolve']['run'] | null; ready?: ReadyCommand[] | null }>('announcement', { method: 'POST' }),
+  announcement: () => call<{ run: LearningPayload['evolve']['run'] | null; ready?: ReadyCommand[] | null; switchedOff?: string; switchedOffMany?: boolean }>('announcement', { method: 'POST' }),
   /** What this conversation saved, once it grew since it was last said; null otherwise. */
   saved: (sessionId: string) => call<{ saved: { savedTokens: number; seenTokens: number } | null }>('saved', { method: 'POST', body: { sessionId } }),
 }

@@ -330,9 +330,9 @@ export function EvolveToast({ t }: { t: Translate }): unknown {
     let timer: ReturnType<typeof setTimeout> | undefined
     const poll = async () => {
       try {
-        const { run, ready } = await api.announcement()
-        const text = run ? toastText(t, run) : ready ? readyText(t, ready) : undefined
-        if (alive && text) setNotice({ key: run ? run.runId : `ready:${Date.now()}`, text, success: run?.outcome?.result === 'adopted' })
+        const { run, ready, switchedOff, switchedOffMany } = await api.announcement()
+        const text = run ? toastText(t, run) : switchedOff ? t(switchedOffMany ? 'toastSwitchedOffMany' : 'toastSwitchedOff', { what: switchedOff }) : ready ? readyText(t, ready) : undefined
+        if (alive && text) setNotice({ key: run ? run.runId : `${switchedOff ? 'off' : 'ready'}:${Date.now()}`, text, success: run?.outcome?.result === 'adopted' })
       } catch { /* The Host is away; try later. */ }
       if (alive) timer = setTimeout(() => { void poll() }, ANNOUNCE_MS)
     }
@@ -342,6 +342,6 @@ export function EvolveToast({ t }: { t: Translate }): unknown {
   // One toast at a time: DSH draws them all in one place.
   const turn = useToastTurn(notice?.key)
   if (!notice || !turn.mine) return null
-  return jsx(Toast, { key: notice.key, text: notice.text, holdMs: notice.key.startsWith('ready:') ? 9000 : 6000, ...notice.success ? { tone: 'success' } : {},
+  return jsx(Toast, { key: notice.key, text: notice.text, holdMs: notice.key.startsWith('ready:') || notice.key.startsWith('off:') ? 9000 : 6000, ...notice.success ? { tone: 'success' } : {},
     onDone: () => { turn.done(); setNotice(undefined) } })
 }

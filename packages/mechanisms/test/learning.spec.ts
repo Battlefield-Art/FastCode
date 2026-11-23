@@ -7,8 +7,8 @@ import { sha256 } from '@tokenwise/core'
 import type { EconomyRecord, JournalRecord, ShadowRecallRecord } from '@tokenwise/protocol'
 import { FileArtifactStore, FileJournal, RuleStore, removeTree } from '@tokenwise/store'
 import {
-  acquireRunLock, adoptedPhrase, adoptionNews, cancelEvolution, LEARNERS, checkpointRecord, disabledRules, evolveContext, outcomeSentence, readEvolveStatus, readRunStatus, releaseRunLock, reviewActiveRules,
-  pruneRuns, refreshScan, ruleChanges, ruleUse, runEvolution, scanEvidence, startEvolution, takeAnnouncement, takeReadyNotice, writeRunStatus,
+  acquireRunLock, adoptedPhrase, adoptionNews, cancelEvolution, checkup, LEARNERS, checkpointRecord, disabledRules, evolveContext, outcomeSentence, readEvolveStatus, readRunStatus, releaseRunLock, reviewActiveRules,
+  pruneRuns, refreshScan, ruleChanges, ruleUse, runEvolution, scanEvidence, startEvolution, switchedOffNow, switchedOffPhrase, switchedOffPronoun, takeAnnouncement, takeReadyNotice, takeSwitchedOff, writeRunStatus,
 } from '../src/index.ts'
 
 const runner = fileURLToPath(new URL('./fixtures/runner.ts', import.meta.url))
@@ -106,10 +106,74 @@ describe('learned rules in use', () => {
     const active = store.state().active!
     expect(active).not.toBe(first)
     expect(store.files(active).map(file => file.path).sort()).toEqual(['index.json', 'rules/quiet.js'])
-    expect(disabledRules(home)).toEqual([{ id: 'noisy', reason: 'the agent asked for the original 3 of 10 times it shortened output', recalls: 3, uses: 10, time: expect.any(String) }])
+    expect(disabledRules(home)).toEqual([{ id: 'noisy', reason: 'the agent asked for the original 3 of 10 times it shortened output', recalls: 3, uses: 10, time: expect.any(String), undone: false }])
     // Nothing more to switch off; and rollback brings it back.
     expect(reviewActiveRules(home, uses)).toEqual([])
     expect(store.rollback()).toBe(first)
+  })
+
+  it('says each switch-off once per agent, and not once a rollback brought the rule back', () => {
+    const home = temp()
+    const store = new RuleStore(home)
+    store.activate(store.installFiles(ruleFiles(['noisy', 'quiet'])))
+    const uses = new Map([['noisy', { id: 'noisy', projections: 7, savedTokens: 900, originalRecalls: 3 }]])
+    expect(reviewActiveRules(home, uses)).toHaveLength(1)
+    // A peek leaves it to be said; taking it says it once.
+    expect(takeSwitchedOff(home, 'claude', true).map(item => item.id)).toEqual(['noisy'])
+    expect(takeSwitchedOff(home, 'claude').map(item => item.id)).toEqual(['noisy'])
+    expect(takeSwitchedOff(home, 'claude')).toEqual([])
+    expect(switchedOffPhrase(disabledRules(home))).toBe('rule noisy, since the agent asked for the original 3 of 7 times it shortened output')
+    // A switch-off older than a week is not news to an agent that never heard of it; within the week it is.
+    expect(takeSwitchedOff(home, 'grok', true, new Date(Date.now() + 8 * 86_400_000))).toEqual([])
+    expect(takeSwitchedOff(home, 'grok', true, new Date(Date.now() + 6 * 86_400_000)).map(item => item.id)).toEqual(['noisy'])
+    // Brought back before pi looked: no news for pi, and none later when the rules change again
+    // (all switched off by hand, or a new adoption without the rule): that switch-off was undone.
+    store.rollback()
+    expect(takeSwitchedOff(home, 'pi', true)).toEqual([])
+    store.deactivate()
+    expect(takeSwitchedOff(home, 'pi', true)).toEqual([])
+    expect(switchedOffNow(home)).toEqual([])
+    store.rollback()
+    store.activate(store.installFiles(ruleFiles(['quiet', 'fresh'])))
+    expect(takeSwitchedOff(home, 'pi')).toEqual([])
+    expect(switchedOffPronoun(disabledRules(home))).toBe('it')
+    expect(switchedOffPhrase([{ id: 'a', reason: 'x', recalls: 1, uses: 2 }, { id: 'b', reason: 'y', recalls: 1, uses: 2 }]))
+      .toBe('rules a, b, since the agent kept asking for the output they removed')
+    expect(switchedOffPronoun([{ id: 'a', reason: 'x', recalls: 1, uses: 2 }, { id: 'b', reason: 'y', recalls: 1, uses: 2 }])).toBe('them')
+  })
+
+  it('does not say a rolled-back switch-off whose rules match an earlier adoption, once the rules are switched off by hand', () => {
+    const home = temp()
+    const store = new RuleStore(home)
+    // The rules left after the switch-off are exactly an earlier adoption's, so the store reuses its hash.
+    const quiet = [{ path: 'index.json', text: JSON.stringify({ schemaVersion: 1, rules: [{ id: 'quiet', file: 'rules/quiet.js' }] }, null, 2) + '\n' }, ruleFiles(['quiet'])[1]!]
+    const first = store.installFiles(quiet)
+    store.activate(first)
+    const second = store.installFiles(ruleFiles(['quiet', 'noisy']))
+    store.activate(second)
+    const uses = new Map([['noisy', { id: 'noisy', projections: 7, savedTokens: 900, originalRecalls: 3 }]])
+    expect(reviewActiveRules(home, uses)).toHaveLength(1)
+    expect(store.state().active).toBe(first)
+    expect(store.rollback()).toBe(second)
+    store.deactivate()
+    expect(switchedOffNow(home)).toEqual([])
+    expect(takeSwitchedOff(home, 'pi')).toEqual([])
+  })
+
+  it('names a rule switched off twice once, and still says a switch-off once more rules were adopted on top', () => {
+    const home = temp()
+    const store = new RuleStore(home)
+    store.activate(store.installFiles(ruleFiles(['noisy', 'quiet'])))
+    const uses = new Map([['noisy', { id: 'noisy', projections: 7, savedTokens: 900, originalRecalls: 3 }]])
+    expect(reviewActiveRules(home, uses)).toHaveLength(1)
+    store.rollback()
+    expect(reviewActiveRules(home, uses)).toHaveLength(1)
+    expect(disabledRules(home).map(item => item.id)).toEqual(['noisy', 'noisy'])
+    expect(switchedOffNow(home).map(item => item.id)).toEqual(['noisy'])
+    // A learner adopting more on top keeps the switch-off in effect: it is still news.
+    store.activate(store.installFiles(ruleFiles(['quiet', 'fresh'])))
+    expect(takeSwitchedOff(home, 'codex').map(item => item.id)).toEqual(['noisy'])
+    expect(takeSwitchedOff(home, 'codex')).toEqual([])
   })
 })
 
@@ -305,6 +369,32 @@ describe('review fixes', () => {
     expect(store.rollback()).toBe(first)
     expect(scanEvidence(evolveContext(env)).disabled).toEqual([])
     expect(store.state().active).toBe(first)
+  })
+
+  it('does not suggest learning a command again for a week after the monitor switched its rule off', () => {
+    const home = temp()
+    const store = new RuleStore(home)
+    store.activate(store.installFiles(ruleFiles(['noisy'])), {}, new Date(Date.now() - 60_000))
+    for (const seed of [1, 2, 3]) observe(home, './build.sh', progress(seed))
+    const journal = new FileJournal(home)
+    for (const i of [1, 2, 3]) journal.append(decision({ callId: `c${i}`, rule: 'noisy', time: stamp(-30_000) }))
+    journal.append(checkpointRecord({ host: 'pi', sessionId: 's', time: stamp(-29_000) }, { kind: 'lightshadow', checkpointTokens: 1,
+      plan: { contract: [], segmentTokens: 1, references: [1, 2, 3].map(i => ({ id: `o-00000000000${i}`, sha256: 'a'.repeat(64), bytes: 1, tokens: 1, tool: 'bash', callId: `c${i}`, excerpt: '' })) } }))
+    for (const i of [1, 2, 3]) journal.append({ schemaVersion: 1, type: 'shadow/recall', time: stamp(-28_000), host: 'pi', sessionId: 's', callId: `r${i}`, id: `o-00000000000${i}`, original: true, outcome: 'returned', bytes: 1 })
+    const env = { ...process.env, TOKENWISE_HOME: home }
+    // The scan that switches the rule off already leaves its command out: the agent needed what the rule removed.
+    const scan = scanEvidence(evolveContext(env))
+    expect(scan.disabled.map(item => item.id)).toEqual(['noisy'])
+    expect(scan).toMatchObject({ ready: false, opportunities: [] })
+    expect(takeReadyNotice(home, 'claude')).toBeUndefined()
+    expect(checkup(evolveContext(env))).toMatchObject({ worth: [], switchedOff: ['./build.sh'] })
+    // A week on, it is worth learning again.
+    const later = new Date(Date.now() + 8 * 86_400_000)
+    expect(scanEvidence(evolveContext(env), later)).toMatchObject({ ready: true, opportunities: [{ command: './build.sh', cases: 3 }] })
+    expect(checkup(evolveContext(env), later)).toMatchObject({ worth: [{ command: './build.sh' }], switchedOff: [] })
+    // Brought back by hand, the rule is no reason to hold the command back.
+    store.rollback()
+    expect(scanEvidence(evolveContext(env))).toMatchObject({ disabled: [], opportunities: [{ command: './build.sh', cases: 3 }] })
   })
 
   it('reads a run past its deadline as interrupted, and signals only a process that holds its lock', () => {

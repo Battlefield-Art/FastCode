@@ -8,7 +8,7 @@ import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { cancelEvolution, LEARNER_INSTRUCTION, nodeBinary, onPath, readEvolveStatus, refreshScan, startEvolution, takeAnnouncement, takeReadyNotice } from '@tokenwise/mechanisms'
+import { cancelEvolution, LEARNER_INSTRUCTION, nodeBinary, onPath, readEvolveStatus, refreshScan, startEvolution, switchedOffPhrase, switchedOffPronoun, takeAnnouncement, takeReadyNotice, takeSwitchedOff } from '@tokenwise/mechanisms'
 import type { BackgroundOptions, ConversationSavings, EvolveRunStatus, EvolveStatus } from '@tokenwise/mechanisms'
 import { RuleStore, ensurePrivateDir, loadConfig } from '@tokenwise/store'
 
@@ -153,9 +153,12 @@ export function createDshLearning(options: DshLearningOptions) {
    * learning from. The scan behind the second is redone in its own process
    * (see `refreshScan`: two minutes after new output, else every ten).
    */
-  const announcement = (): { run: EvolveRunStatus | null; ready: ReturnType<typeof takeReadyNotice> | null } => {
+  const announcement = (): { run: EvolveRunStatus | null; ready: ReturnType<typeof takeReadyNotice> | null; switchedOff?: string; switchedOffMany?: boolean } => {
     const run = takeAnnouncement(configDir, HOST)
     if (run) return { run, ready: null }
+    // A learned rule the monitor switched off: said once, like a run.
+    const off = takeSwitchedOff(configDir, HOST)
+    if (off.length) return { run: null, ready: null, switchedOff: switchedOffPhrase(off), switchedOffMany: switchedOffPronoun(off) === 'them' }
     const runnerOptions = background()
     if ('unavailable' in runnerOptions) return { run: null, ready: null }
     try { refreshScan(configDir, runnerOptions) } catch { /* Next poll. */ }

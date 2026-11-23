@@ -20,6 +20,12 @@ allows it (in full on five, assisted on three), and self-evolving filters. (0.1.
   yamllint. Commands whose output has nothing safe to remove (eslint's
   stylish text, rspec, golangci-lint, sops, curl, ssh and others) are left
   whole. Filter runtime `static-v15`.
+- When the monitor switches a learned rule off (the agent kept asking for the
+  original output), every agent says so once: on the turn-end card ("Switched
+  off: rule …, since …"), at its next start, in DeepSeek Harness's toast, and in
+  pi's /tokenwise panel, which keeps listing it while it stays off. A rule a
+  rollback brought back is not announced. For a week after, TokenWise no
+  longer suggests learning that rule's command again.
 - Commands that set up their environment first are filtered like the bare
   command: `source venv/bin/activate && pytest`, `. .venv/bin/activate &&`,
   conda's `source …/bin/activate env &&`, `source ./.env &&`, `export

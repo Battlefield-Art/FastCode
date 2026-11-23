@@ -31,6 +31,8 @@ describe('RuleStore', () => {
     expect(store.state()).toMatchObject({ active: second, history: [{ hash: first, parent: null, cases: 3, gainTokens: 120, rules: 1 }, { hash: second, parent: first }] })
     expect(store.load()?.rules.map(rule => rule.id)).toEqual(['b'])
     expect(store.rollback()).toBe(first)
+    // The adoption it undid is marked; the others are not.
+    expect(store.state().history.map(item => item.undoneAt !== undefined)).toEqual([false, true])
     expect(store.load()?.rules.map(rule => rule.id)).toEqual(['a'])
     expect(store.rollback()).toBeNull()
     expect(store.load()).toBeUndefined()

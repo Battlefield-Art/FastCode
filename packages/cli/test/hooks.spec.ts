@@ -3,9 +3,11 @@ import { chmodSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, w
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
+import { reviewActiveRules } from '@tokenwise/mechanisms'
 import { FileArtifactStore, RuleStore } from '@tokenwise/store'
 import { conversationNotice } from '../src/conversation.ts'
 import { claudeHook, codebuddyHook, copilotHook, eventHost, grokHook, hermesHook } from '../src/hook.ts'
+import { startupNotice } from '../src/learn.ts'
 import { projectOutput } from '../src/project.ts'
 
 const dirs: string[] = []
@@ -451,6 +453,25 @@ describe('what a conversation saved, at the end of a turn', () => {
     // Rolled back before Grok looked: Grok never hears of it.
     store.rollback()
     expect(conversationNotice('grok', 'g1', env)).toBeUndefined()
+  })
+
+  it('says once, at the end of the next turn and at the next start, that the monitor switched a learned rule off', () => {
+    const env = savedConversation('claude')
+    const home = env.TOKENWISE_HOME!
+    const store = new RuleStore(home)
+    store.activate(store.installFiles([{ path: 'index.json', text: JSON.stringify({ schemaVersion: 1, rules: [{ id: 'etl-batch-progress', file: 'rules/etl.js' }] }) },
+      { path: 'rules/etl.js', text: 'defineRule({ project(input, tw) { return null } })' }]))
+    expect(reviewActiveRules(home, new Map([['etl-batch-progress', { id: 'etl-batch-progress', projections: 7, savedTokens: 900, originalRecalls: 3 }]]))).toHaveLength(1)
+    const stop = { hook_event_name: 'Stop', session_id: 's1', stop_hook_active: false, cwd: '/w' }
+    const card = stripAnsi(JSON.parse(claudeHook(stop, env)!).systemMessage as string).split('\n')
+    expect(card.at(-1)).toBe('       ✦ Switched off: rule etl-batch-progress, since the agent asked for the original 3 of 7 times it shortened output (/tokenwise to see or bring it back)')
+    expect(conversationNotice('claude', 'other', env)).toBeUndefined()
+    // Another agent's start says it, once; one brought back before an agent looked is no news to it.
+    expect(startupNotice('codex', env)).toBe('TokenWise switched off rule etl-batch-progress, since the agent asked for the original 3 of 7 times it shortened output. See it, or bring it back, with $tokenwise.')
+    expect(startupNotice('codex', env)).toBeUndefined()
+    store.rollback()
+    expect(conversationNotice('grok', 'g1', env)).toBeUndefined()
+    expect(startupNotice('grok', env)).toBeUndefined()
   })
 
   it('speaks English whatever the locale, and says nothing for a conversation that saved nothing', () => {

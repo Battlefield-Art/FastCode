@@ -95,6 +95,8 @@ export const en = {
   toastAdopted: 'TokenWise learned {rules} (+{gain} tokens)',
   toastFinished: 'TokenWise learning: {tag} — {result}',
   toastReady: 'TokenWise can learn from your {commands} output (~{tokens} tokens to save). Start it in Plugins → TokenWise.',
+  toastSwitchedOff: 'TokenWise switched off {what}. See it, or bring it back, in Plugins → TokenWise.',
+  toastSwitchedOffMany: 'TokenWise switched off {what}. See them, or bring them back, in Plugins → TokenWise.',
   toastSaved: 'TokenWise saved {tokens} tokens in this conversation (tool output {percent}% shorter)',
   toastSavedLittle: 'TokenWise saved {tokens} tokens in this conversation (tool output under 1% shorter)',
   ago: '{t} ago',

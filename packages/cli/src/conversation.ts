@@ -4,10 +4,10 @@
  * was last said (@tokenwise/mechanisms keeps that number on disk), so a turn
  * that saved nothing shows nothing.
  */
-import { adoptionNews, markSavingsTold, savedCard, untoldSavings } from '@tokenwise/mechanisms'
+import { adoptionNews, markSavingsTold, savedCard, takeSwitchedOff, untoldSavings } from '@tokenwise/mechanisms'
 import type { CardStyle } from '@tokenwise/mechanisms'
 import { cliContext } from './context.ts'
-import { learnedNews } from './learn.ts'
+import { learnedNews, switchedOffNews } from './learn.ts'
 
 /**
  * How each agent shows the card (@tokenwise/mechanisms savedCard), as seen in each one's real terminal UI
@@ -40,10 +40,14 @@ export function conversationNotice(host: string, sessionId: string | undefined, 
   const writable = options.peek ? undefined : context.writable()
   // Peeked first: only a card that is shown (or marked told) uses it up.
   const news = adoptionNews(context.dataDir, host, true)
+  // Else a learned rule the monitor switched off since: one row a turn, the other waits for the next card.
+  const off = news ? [] : takeSwitchedOff(context.dataDir, host, true)
+  const row = news ? learnedNews(host, news) : off.length ? { label: 'Switched off:', text: switchedOffNews(host, off) } : undefined
   const style = CARD_STYLE[host] ?? {}
-  const line = savedCard(savings, env.NO_COLOR ? { ...style, color: false } : style, news && learnedNews(host, news))
+  const line = savedCard(savings, env.NO_COLOR ? { ...style, color: false } : style, row)
   if (!line) return undefined
   if (writable && savings) markSavingsTold(writable.dataDir, host, sessionId, savings.savedTokens)
   if (writable && news) adoptionNews(writable.dataDir, host)
+  if (writable && off.length) takeSwitchedOff(writable.dataDir, host)
   return options.told ? undefined : line
 }

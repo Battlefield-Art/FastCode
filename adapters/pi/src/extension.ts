@@ -17,7 +17,7 @@ import { sha256 } from '@tokenwise/core'
 import {
   cancelEvolution, collectSubagents, describeToolCall, formatTokens, isPrepared, EconomyEngine, LEARNER_INSTRUCTION, markSavingsTold, nodeBinary,
   normalizeShellCommand, onPath, outcomeSentence, readEvolveStatus, recordSubagent, refreshScan, startEvolution, summarizeEconomy, summarizeShadow,
-  repeatReadCandidate, savedCard, takeAnnouncement, untoldSavings, adoptionNews,
+  repeatReadCandidate, savedCard, takeAnnouncement, untoldSavings, adoptionNews, switchedOffNow, switchedOffPhrase, switchedOffPronoun, takeSwitchedOff,
 } from '@tokenwise/mechanisms'
 import type { BackgroundOptions, EvolveStatus, Prepared } from '@tokenwise/mechanisms'
 import { HOST_PROFILES, V0_2_SPECS, negotiate } from '@tokenwise/protocol'
@@ -259,11 +259,15 @@ export function createTokenWiseExtension(options: TokenWisePiOptions = {}) {
         const savings = untoldSavings(read, readDirs, HOST, sessionId)
         // Once after a learning run adopted rules (and the run's own toast has not said so), the card says what TokenWise just learned.
         const news = adoptionNews(configDir, HOST, true)
-        const learned = news && `${news} for every agent (/tokenwise to see or undo)`
-        const frame = (progress: number) => savedCard(savings, { color: !env.NO_COLOR, lines: true, progress }, learned)?.split('\n')
+        // Else a learned rule the monitor switched off since: one row a turn.
+        const off = news ? [] : takeSwitchedOff(configDir, HOST, true)
+        const row = news ? `${news} for every agent (/tokenwise to see or undo)`
+          : off.length ? { label: 'Switched off:', text: `${switchedOffPhrase(off)} (/tokenwise to see or bring ${switchedOffPronoun(off)} back)` } : undefined
+        const frame = (progress: number) => savedCard(savings, { color: !env.NO_COLOR, lines: true, progress }, row)?.split('\n')
         if (!frame(1)) return
         if (savings) markSavingsTold(dataDir, HOST, sessionId, savings.savedTokens)
         if (news) adoptionNews(configDir, HOST)
+        if (off.length) takeSwitchedOff(configDir, HOST)
         stopCard()
         const started = Date.now()
         ctx.ui.setWidget(CARD_WIDGET, frame(0))
@@ -410,11 +414,14 @@ export function createTokenWiseExtension(options: TokenWisePiOptions = {}) {
       const subagents = session.sessionId ? collectSubagents(read, session.sessionId) : undefined
       const learner = learnerFor(ctx)
       const runnerOptions = background()
+      const evolve = evolveStatus() ?? { rules: { active: null, rules: [], history: 0 } }
       return {
         economy: summarizeEconomy(records), shadow: summarizeShadow(records),
         ...subagents && subagents.sessions.length ? { subagents: { sessions: subagents.sessions.length, summary: summarizeEconomy(subagents.records) } } : {},
         modes: session.negotiated.filter(item => item.mechanism !== 'command-normalization').map(item => `${item.mechanism === 'lightshadow' ? 'shadow' : item.mechanism} ${item.mode}`).join(' · '),
-        evolve: evolveStatus() ?? { rules: { active: null, rules: [], history: 0 } },
+        evolve,
+        // The monitor's switch-offs stay listed while those rules are off (the scan says only its own, until the next one).
+        switchedOff: (() => { try { return switchedOffNow(configDir).slice(-3) } catch { return [] } })(),
         learner: 'unavailable' in runnerOptions ? runnerOptions : 'unavailable' in learner ? learner : { label: learner.label },
         learnedRulesOff: !session.loaded.config.economy.learnedRules,
         now: Date.now(),

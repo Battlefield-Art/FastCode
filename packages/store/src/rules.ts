@@ -25,6 +25,8 @@ export interface RuleAdoption {
   readonly cases?: number
   readonly gainTokens?: number
   readonly note?: string
+  /** When a rollback undid this adoption (the rules it replaced came back). */
+  readonly undoneAt?: string
   /** Set when a person taught the rules in their own agent (`tokenwise teach`): the command, and the rules it added or changed. */
   readonly taught?: { readonly command: string; readonly rules: readonly string[] }
 }
@@ -154,9 +156,12 @@ export class RuleStore {
       if (back) this.writeState({ schemaVersion: 1, active: back, activatedAt: new Date().toISOString(), history: state.history })
       return back
     }
-    const current = [...state.history].reverse().find(item => item.hash === state.active)
-    const previous = current?.parent ?? null
-    this.writeState({ schemaVersion: 1, active: previous, activatedAt: new Date().toISOString(), history: state.history })
+    const index = state.history.findLastIndex(item => item.hash === state.active)
+    const previous = state.history[index]?.parent ?? null
+    const now = new Date().toISOString()
+    // The adoption it undoes is marked, so what it did (a switch-off, say) is not taken as still in effect.
+    const history = state.history.map((item, i) => i === index ? { ...item, undoneAt: now } : item)
+    this.writeState({ schemaVersion: 1, active: previous, activatedAt: now, history })
     return previous
   }
 

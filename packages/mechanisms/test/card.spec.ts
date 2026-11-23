@@ -63,4 +63,14 @@ describe('the card that says what a conversation saved', () => {
     expect(savedCard({ savedTokens: 0, seenTokens: 400 }, { lines: true })).toBeUndefined()
     expect(savedCard({ savedTokens: -50, seenTokens: 400 })).toBeUndefined()
   })
+
+  it('can say another row than what was just learned, with its own label', () => {
+    const off = { label: 'Switched off:', text: 'rule etl-batch-progress, since the agent asked for the original 3 of 7 times it shortened output (/tokenwise to see or bring it back)' }
+    expect(savedCard(saved, { lines: true }, off)!.split('\n')[3])
+      .toBe('       ✦ Switched off: rule etl-batch-progress, since the agent asked for the original 3 of 7 times it shortened output (/tokenwise to see or bring it back)')
+    // With nothing saved, said on its own; on one line, after the bar.
+    expect(savedCard(undefined, {}, off)).toBe(`TokenWise ✦ Switched off: ${off.text}`)
+    expect(savedCard(saved, {}, off)).toBe(`TokenWise · saved 2,402 tokens in this conversation ▰▰▰▰▰▰▰▰▱▱ tool output 78% shorter · ✦ Switched off: ${off.text}`)
+    expect(savedCard(saved, { lines: true }, 'output from x is now shorter')!.split('\n')[3]).toBe('       ✦ Just learned: output from x is now shorter')
+  })
 })

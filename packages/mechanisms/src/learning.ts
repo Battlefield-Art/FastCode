@@ -1068,11 +1068,60 @@ export interface SwitchedOff { readonly id: string; readonly reason: string; rea
 const switchedOffReason = (recalls: number, uses: number) => `the agent asked for the original ${recalls} of ${uses} times it shortened output`
 
 /** Rules the monitor switched off, newest last, from the run history of adoptions. */
-export function disabledRules(dataDir: string): (SwitchedOff & { time: string })[] {
+export function disabledRules(dataDir: string): (SwitchedOff & { time: string; undone: boolean })[] {
   return new RuleStore(dataDir).state().history.flatMap(item => (item.note ?? '').split('; ').flatMap(note => {
     const match = /^switched off (\S+): the agent asked for the original (\d+) of (\d+) times/u.exec(note)
-    return match ? [{ id: match[1]!, recalls: Number(match[2]), uses: Number(match[3]), reason: switchedOffReason(Number(match[2]), Number(match[3])), time: item.adoptedAt }] : []
+    return match ? [{ id: match[1]!, recalls: Number(match[2]), uses: Number(match[3]), reason: switchedOffReason(Number(match[2]), Number(match[3])),
+      time: item.adoptedAt, undone: item.undoneAt !== undefined }] : []
   }))
+}
+
+/**
+ * The monitor's switch-offs still in effect, newest last, one per rule: not
+ * undone by a rollback (which stays undone whatever happens after it), and
+ * the rule not back in use.
+ */
+export function switchedOffNow(dataDir: string): (SwitchedOff & { time: string; undone: boolean })[] {
+  const active = new Set(activeRulesView(dataDir).rules.map(rule => rule.id))
+  const latest = new Map<string, SwitchedOff & { time: string; undone: boolean }>()
+  for (const item of disabledRules(dataDir)) {
+    if (item.undone || active.has(item.id)) continue
+    latest.delete(item.id)
+    latest.set(item.id, item)
+  }
+  return [...latest.values()]
+}
+
+const switchOffToldFile = (dataDir: string) => join(evolveDir(dataDir), 'switched-off-told.json')
+/** How far back a host that has never said a switch-off looks for one to say. */
+const SWITCH_OFF_NEWS_MS = 7 * 86_400_000
+
+/**
+ * Rules the monitor switched off that this host has not said yet, newest
+ * last: each once, and only while it is still off (one a rollback brought
+ * back is no news). Marked told unless `peek`.
+ */
+export function takeSwitchedOff(dataDir: string, host: string, peek = false, now = new Date()): (SwitchedOff & { time: string })[] {
+  const told = readJson<Record<string, string>>(switchOffToldFile(dataDir)) ?? {}
+  const since = told[host] ?? new Date(now.getTime() - SWITCH_OFF_NEWS_MS).toISOString()
+  const fresh = switchedOffNow(dataDir).filter(item => item.time > since)
+  if (fresh.length === 0) return []
+  if (!peek) {
+    try { writeJsonAtomic(switchOffToldFile(dataDir), { ...told, [host]: fresh.map(item => item.time).sort().at(-1)! }) } catch { return [] }
+  }
+  return fresh
+}
+
+/** "it" for one rule switched off, "them" for more: "see it, or bring it back". */
+export function switchedOffPronoun(items: readonly SwitchedOff[]): 'it' | 'them' {
+  return new Set(items.map(item => item.id)).size === 1 ? 'it' : 'them'
+}
+
+/** What the monitor switched off, for the person: "rule x, since the agent asked for the original 3 of 7 times it shortened output". */
+export function switchedOffPhrase(items: readonly SwitchedOff[]): string {
+  const ids = [...new Set(items.map(item => item.id))]
+  if (ids.length === 1) return `rule ${ids[0]}, since ${items.findLast(item => item.id === ids[0])!.reason}`
+  return `rules ${ids.join(', ')}, since the agent kept asking for the output they removed`
 }
 
 /**
@@ -1109,6 +1158,27 @@ export function reviewActiveRules(dataDir: string, uses: ReadonlyMap<string, Rul
   return reasons
 }
 
+/** How long a command whose learned rule the monitor switched off is not suggested for learning again. */
+const SWITCHED_OFF_COOLING_MS = 7 * 86_400_000
+
+/**
+ * Commands a learned rule shortened until the monitor switched it off in the
+ * past week (and it is still off): the agent needed what the rule removed, so
+ * asking the person to teach the same command again would contradict that.
+ */
+export function coolingCommands(records: readonly JournalRecord[], dataDir: string, now = new Date()): Set<string> {
+  const since = new Date(now.getTime() - SWITCHED_OFF_COOLING_MS).toISOString()
+  const off = new Set(switchedOffNow(dataDir).filter(item => item.time > since).map(item => item.id))
+  const heads = new Set<string>()
+  if (off.size === 0) return heads
+  for (const item of records) {
+    if (item.type !== 'economy/decision') continue
+    const record = item as EconomyRecord
+    if (record.filter === 'learned-rule' && record.rule && off.has(record.rule) && record.command) heads.add(commandHead(record.command))
+  }
+  return heads
+}
+
 /**
  * Look at the evidence: what the current policy leaves on observations newer
  * than the last run, grouped by command, and how the active rules do in use
@@ -1130,6 +1200,7 @@ export function scanEvidence(context: EvolveContext, now = new Date()): EvolveSc
   let rulesSet: LearnedRuleSet | undefined
   try { rulesSet = store.load() } catch { rulesSet = undefined }
   const policy = createPolicy(context.economy.filterOptions, rulesSet)
+  const cooling = coolingCommands(records, context.dataDir, now)
   const groups = new Map<string, { cases: number; leftTokens: number }>()
   let leftTokens = 0
   for (const item of fresh) {
@@ -1138,8 +1209,8 @@ export function scanEvidence(context: EvolveContext, now = new Date()): EvolveSc
     const left = (row.rawTokens - row.saving) * item.occurrences
     leftTokens += left
     const head = commandHead(item.result.command)
-    // A one-off script has no format to learn, so it is no reason to learn.
-    if (scriptRun(head)) continue
+    // A one-off script has no format to learn, so it is no reason to learn; nor, for a week, is a command whose rule was just switched off.
+    if (scriptRun(head) || cooling.has(head)) continue
     const group = groups.get(head) ?? { cases: 0, leftTokens: 0 }
     group.cases++
     group.leftTokens += left
