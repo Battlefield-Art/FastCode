@@ -1,0 +1,38 @@
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": SQLite database "fresh.db" at "file:./fresh.db"
+
+30 migrations found in prisma/migrations
+Following migrations have not yet been applied:
+20240101090000_init
+20240102090100_add_posts
+20240103090200_add_comments
+20240104090300_add_tags
+20240105090400_post_tags
+20240106090500_add_profiles
+20240107090600_user_roles
+20240108090700_add_sessions
+20240109090800_audit_log
+20240110090900_add_teams
+20240111091000_team_members
+20240112091100_add_invites
+20240113091200_add_projects
+20240114091300_project_members
+20240115091400_add_tasks
+20240116091500_task_labels
+20240117091600_add_attachments
+20240118091700_add_webhooks
+20240119091800_webhook_deliveries
+20240120091900_add_api_keys
+20240121092000_add_billing
+20240122092100_add_invoices
+20240123092200_add_notifications
+20240124092300_notification_prefs
+20240125092400_add_feature_flags
+20240126092500_add_settings
+20240127092600_add_reactions
+20240128092700_add_mentions
+20240201092800_add_search_index
+20240202092900_add_exports
+
+To apply migrations in development run prisma migrate dev.
+To apply migrations in production run prisma migrate deploy.

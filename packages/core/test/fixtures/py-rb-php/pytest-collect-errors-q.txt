@@ -1,0 +1,115 @@
+
+==================================== ERRORS ====================================
+___________________ ERROR collecting tests/test_accounts.py ____________________
+ImportError while importing test module '/home/dev/ledger/tests/test_accounts.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_accounts.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+____________________ ERROR collecting tests/test_balance.py ____________________
+ImportError while importing test module '/home/dev/ledger/tests/test_balance.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_balance.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+___________________ ERROR collecting tests/test_currency.py ____________________
+ImportError while importing test module '/home/dev/ledger/tests/test_currency.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_currency.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+____________________ ERROR collecting tests/test_export.py _____________________
+ImportError while importing test module '/home/dev/ledger/tests/test_export.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_export.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+__________________ ERROR collecting tests/test_import_csv.py ___________________
+ImportError while importing test module '/home/dev/ledger/tests/test_import_csv.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_import_csv.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+____________________ ERROR collecting tests/test_journal.py ____________________
+ImportError while importing test module '/home/dev/ledger/tests/test_journal.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_journal.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+___________________ ERROR collecting tests/test_ledger_io.py ___________________
+ImportError while importing test module '/home/dev/ledger/tests/test_ledger_io.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_ledger_io.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+___________________ ERROR collecting tests/test_reconcile.py ___________________
+ImportError while importing test module '/home/dev/ledger/tests/test_reconcile.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_reconcile.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+____________________ ERROR collecting tests/test_reports.py ____________________
+ImportError while importing test module '/home/dev/ledger/tests/test_reports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_reports.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+______________________ ERROR collecting tests/test_tax.py ______________________
+ImportError while importing test module '/home/dev/ledger/tests/test_tax.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_tax.py:1: in <module>
+    from ledger import balance
+E   ModuleNotFoundError: No module named 'ledger'
+=========================== short test summary info ============================
+ERROR tests/test_accounts.py
+ERROR tests/test_balance.py
+ERROR tests/test_currency.py
+ERROR tests/test_export.py
+ERROR tests/test_import_csv.py
+ERROR tests/test_journal.py
+ERROR tests/test_ledger_io.py
+ERROR tests/test_reconcile.py
+ERROR tests/test_reports.py
+ERROR tests/test_tax.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 10 errors during collection !!!!!!!!!!!!!!!!!!!
+10 errors in 0.09s

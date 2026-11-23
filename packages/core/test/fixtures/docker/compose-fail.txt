@@ -1,0 +1,88 @@
+ Service worker  Building
+ Service api  Building
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [worker internal] load build definition from Dockerfile
+#1 transferring dockerfile: 222B done
+#1 DONE 0.0s
+
+#2 [api internal] load build definition from Dockerfile
+#2 transferring dockerfile: 328B done
+#2 DONE 0.0s
+
+#3 [worker internal] load metadata for docker.io/library/node:22-bookworm
+#3 DONE 0.0s
+
+#4 [api internal] load metadata for docker.io/library/python:3.12-slim
+#4 DONE 0.0s
+
+#5 [worker internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [api internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [api 1/6] FROM docker.io/library/python:3.12-slim
+#7 DONE 0.0s
+
+#8 [worker 1/5] FROM docker.io/library/node:22-bookworm
+#8 DONE 0.0s
+
+#9 [api 2/6] WORKDIR /app
+#9 CACHED
+
+#10 [worker 2/5] WORKDIR /srv
+#10 CACHED
+
+#11 [worker internal] load build context
+#11 transferring context: 135B done
+#11 DONE 0.0s
+
+#12 [api internal] load build context
+#12 transferring context: 281B done
+#12 DONE 0.0s
+
+#13 [api 3/6] COPY requirements.txt .
+#13 DONE 0.0s
+
+#14 [worker 3/5] COPY package.json .
+#14 DONE 0.0s
+
+#15 [worker 4/5] RUN npm install --omit=dev --no-audit --no-fund
+#15 0.990 
+#15 0.990 added 1 package in 854ms
+#15 DONE 1.0s
+
+#16 [worker 5/5] COPY worker.js .
+#16 DONE 0.0s
+
+#17 [worker] exporting to image
+#17 exporting layers 0.0s done
+ Service worker  Built
+#17 writing image sha256:797b219454636ff95577860302274c8212dd8baf52244ee47de9312be628f32f done
+#17 naming to docker.io/library/app-worker done
+#17 DONE 0.0s
+
+#18 [worker] resolving provenance for metadata file
+#18 DONE 0.0s
+
+#19 [api 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#19 1.376 Collecting flask==3.0.3 (from -r requirements.txt (line 1))
+#19 1.758   Downloading flask-3.0.3-py3-none-any.whl.metadata (3.2 kB)
+#19 1.906 Collecting gunicorn==22.0.0 (from -r requirements.txt (line 2))
+#19 1.992   Downloading gunicorn-22.0.0-py3-none-any.whl.metadata (4.4 kB)
+#19 2.324 ERROR: Could not find a version that satisfies the requirement this-package-does-not-exist-tw==0.0.1 (from versions: none)
+#19 2.325 ERROR: No matching distribution found for this-package-does-not-exist-tw==0.0.1
+#19 ERROR: process "/bin/sh -c pip install --no-cache-dir -r requirements.txt" did not complete successfully: exit code: 1
+------
+ > [api 4/6] RUN pip install --no-cache-dir -r requirements.txt:
+1.376 Collecting flask==3.0.3 (from -r requirements.txt (line 1))
+1.758   Downloading flask-3.0.3-py3-none-any.whl.metadata (3.2 kB)
+1.906 Collecting gunicorn==22.0.0 (from -r requirements.txt (line 2))
+1.992   Downloading gunicorn-22.0.0-py3-none-any.whl.metadata (4.4 kB)
+2.324 ERROR: Could not find a version that satisfies the requirement this-package-does-not-exist-tw==0.0.1 (from versions: none)
+2.325 ERROR: No matching distribution found for this-package-does-not-exist-tw==0.0.1
+------
+failed to solve: process "/bin/sh -c pip install --no-cache-dir -r requirements.txt" did not complete successfully: exit code: 1

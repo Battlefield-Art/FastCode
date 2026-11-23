@@ -1,0 +1,42 @@
+{
+  "name": "@tokenwise/opencode",
+  "version": "0.3.0",
+  "description": "TokenWise for OpenCode: shrinks recognized bash output (tests, builds, diffs, searches) before the model reads it, keeping the original privately.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "tokenwise",
+    "context",
+    "tokens"
+  ],
+  "homepage": "https://github.com/HKUDS/TokenWise/tree/main/adapters/opencode#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HKUDS/TokenWise.git",
+    "directory": "adapters/opencode"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@tokenwise/core": "workspace:*",
+    "@tokenwise/mechanisms": "workspace:*",
+    "@tokenwise/protocol": "workspace:*",
+    "@tokenwise/store": "workspace:*"
+  }
+}

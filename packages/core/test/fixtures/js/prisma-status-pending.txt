@@ -1,0 +1,14 @@
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": SQLite database "dev.db" at "file:./dev.db"
+
+30 migrations found in prisma/migrations
+Following migrations have not yet been applied:
+20240125092400_add_feature_flags
+20240126092500_add_settings
+20240127092600_add_reactions
+20240128092700_add_mentions
+20240201092800_add_search_index
+20240202092900_add_exports
+
+To apply migrations in development run prisma migrate dev.
+To apply migrations in production run prisma migrate deploy.

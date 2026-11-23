@@ -1,0 +1,35 @@
+{
+  "name": "@tokenwise/protocol",
+  "version": "0.3.0",
+  "description": "TokenWise host capability vocabulary, host profiles, mechanism negotiation and journal record schemas.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://github.com/HKUDS/TokenWise#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HKUDS/TokenWise.git",
+    "directory": "packages/protocol"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "files": [
+    "lib",
+    "src",
+    "!lib/.tsbuildinfo"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tokenwise/core": "workspace:*"
+  },
+  "sideEffects": false
+}

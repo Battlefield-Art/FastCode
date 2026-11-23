@@ -1,0 +1,136 @@
+ Service worker  Building
+ Service api  Building
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [worker internal] load build definition from Dockerfile
+#1 transferring dockerfile: 222B done
+#1 DONE 0.0s
+
+#2 [worker internal] load metadata for docker.io/library/node:22-bookworm
+#2 DONE 0.0s
+
+#3 [api internal] load build definition from Dockerfile
+#3 transferring dockerfile: 328B done
+#3 DONE 0.0s
+
+#4 [api internal] load metadata for docker.io/library/python:3.12-slim
+#4 DONE 0.0s
+
+#5 [worker internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [api internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [worker 1/5] FROM docker.io/library/node:22-bookworm
+#7 DONE 0.0s
+
+#8 [worker 2/5] WORKDIR /srv
+#8 CACHED
+
+#9 [api 1/6] FROM docker.io/library/python:3.12-slim
+#9 DONE 0.0s
+
+#10 [api 2/6] WORKDIR /app
+#10 CACHED
+
+#11 [worker internal] load build context
+#11 transferring context: 135B done
+#11 DONE 0.0s
+
+#12 [api internal] load build context
+#12 transferring context: 203B done
+#12 DONE 0.0s
+
+#13 [worker 3/5] COPY package.json .
+#13 DONE 0.0s
+
+#14 [api 3/6] COPY requirements.txt .
+#14 DONE 0.0s
+
+#15 [api 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#15 ...
+
+#16 [worker 4/5] RUN npm install --omit=dev --no-audit --no-fund
+#16 1.740 
+#16 1.740 added 1 package in 1s
+#16 1.742 npm notice
+#16 1.742 npm notice New major version of npm available! 10.9.9 -> 12.2.3
+#16 1.742 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+#16 1.742 npm notice To update run: npm install -g npm@12.2.3
+#16 1.742 npm notice
+#16 DONE 1.9s
+
+#17 [worker 5/5] COPY worker.js .
+#17 DONE 0.2s
+
+#15 [api 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#15 ...
+
+#18 [worker] exporting to image
+#18 exporting layers 0.2s done
+#18 writing image sha256:642d083f92387b93009315872d1cdc6ce9873c44fc3ceca3f4e57542ee59bfbe done
+#18 naming to docker.io/library/app-worker 0.0s done
+#18 DONE 0.3s
+
+#15 [api 4/6] RUN pip install --no-cache-dir -r requirements.txt
+ Service worker  Built
+#15 ...
+
+#19 [worker] resolving provenance for metadata file
+#19 DONE 0.0s
+
+#15 [api 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#15 8.433 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1011)'))': /simple/flask/
+#15 8.842 Collecting flask==3.0.3 (from -r requirements.txt (line 1))
+#15 9.198   Downloading flask-3.0.3-py3-none-any.whl.metadata (3.2 kB)
+#15 9.337 Collecting gunicorn==22.0.0 (from -r requirements.txt (line 2))
+#15 9.421   Downloading gunicorn-22.0.0-py3-none-any.whl.metadata (4.4 kB)
+#15 9.577 Collecting Werkzeug>=3.0.0 (from flask==3.0.3->-r requirements.txt (line 1))
+#15 9.657   Downloading werkzeug-3.1.9-py3-none-any.whl.metadata (4.1 kB)
+#15 9.776 Collecting Jinja2>=3.1.2 (from flask==3.0.3->-r requirements.txt (line 1))
+#15 9.855   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#15 9.953 Collecting itsdangerous>=2.1.2 (from flask==3.0.3->-r requirements.txt (line 1))
+#15 10.03   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+#15 10.16 Collecting click>=8.1.3 (from flask==3.0.3->-r requirements.txt (line 1))
+#15 10.25   Downloading click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
+#15 10.36 Collecting blinker>=1.6.2 (from flask==3.0.3->-r requirements.txt (line 1))
+#15 10.44   Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+#15 10.56 Collecting packaging (from gunicorn==22.0.0->-r requirements.txt (line 2))
+#15 10.63   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+#15 10.90 Collecting MarkupSafe>=2.0 (from Jinja2>=3.1.2->flask==3.0.3->-r requirements.txt (line 1))
+#15 10.98   Downloading markupsafe-3.0.4-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (2.7 kB)
+#15 11.06 Downloading flask-3.0.3-py3-none-any.whl (101 kB)
+#15 11.32 Downloading gunicorn-22.0.0-py3-none-any.whl (84 kB)
+#15 11.43 Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#15 11.51 Downloading click-8.5.1-py3-none-any.whl (126 kB)
+#15 11.65 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#15 11.73 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#15 11.86 Downloading werkzeug-3.1.9-py3-none-any.whl (228 kB)
+#15 12.02 Downloading packaging-26.3-py3-none-any.whl (129 kB)
+#15 12.12 Downloading markupsafe-3.0.4-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (24 kB)
+#15 12.14 Installing collected packages: packaging, MarkupSafe, itsdangerous, click, blinker, Werkzeug, Jinja2, gunicorn, flask
+#15 12.66 Successfully installed Jinja2-3.1.6 MarkupSafe-3.0.4 Werkzeug-3.1.9 blinker-1.9.0 click-8.5.1 flask-3.0.3 gunicorn-22.0.0 itsdangerous-2.2.0 packaging-26.3
+#15 12.67 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#15 DONE 12.8s
+
+#20 [api 5/6] COPY . .
+#20 DONE 0.0s
+
+#21 [api 6/6] RUN python -c "import app; print('import ok')"
+#21 0.298 import ok
+#21 DONE 0.4s
+
+#22 [api] exporting to image
+#22 exporting layers
+#22 exporting layers 0.3s done
+#22 writing image sha256:02d94db920ec48d577330041d12c1f4a3a6087e1a4e04454d77ae017944785a2
+#22 writing image sha256:02d94db920ec48d577330041d12c1f4a3a6087e1a4e04454d77ae017944785a2 done
+#22 naming to docker.io/library/app-api 0.0s done
+#22 DONE 0.3s
+
+#23 [api] resolving provenance for metadata file
+ Service api  Built
+#23 DONE 0.1s

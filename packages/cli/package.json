@@ -1,0 +1,46 @@
+{
+  "name": "@tokenwise/cli",
+  "version": "0.3.0",
+  "description": "The tokenwise command: set TokenWise up for your agents, run any command with TokenWise filtering, the agent hooks, savings reports and diagnostics.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "tokenwise",
+    "codex",
+    "context",
+    "tokens",
+    "cli"
+  ],
+  "homepage": "https://github.com/HKUDS/TokenWise#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HKUDS/TokenWise.git",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "tokenwise": "./dist/tokenwise.js",
+    "tw": "./dist/tokenwise.js"
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/tokenwise.js",
+    "dist/evolve.js",
+    "assets/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@tokenwise/core": "workspace:*",
+    "@tokenwise/protocol": "workspace:*",
+    "@tokenwise/store": "workspace:*",
+    "@tokenwise/mechanisms": "workspace:*"
+  }
+}

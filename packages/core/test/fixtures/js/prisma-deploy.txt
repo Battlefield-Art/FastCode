@@ -1,0 +1,86 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": SQLite database "dev.db" at "file:./dev.db"
+
+SQLite database dev.db created at file:./dev.db
+
+24 migrations found in prisma/migrations
+
+Applying migration `20240101090000_init`
+Applying migration `20240102090100_add_posts`
+Applying migration `20240103090200_add_comments`
+Applying migration `20240104090300_add_tags`
+Applying migration `20240105090400_post_tags`
+Applying migration `20240106090500_add_profiles`
+Applying migration `20240107090600_user_roles`
+Applying migration `20240108090700_add_sessions`
+Applying migration `20240109090800_audit_log`
+Applying migration `20240110090900_add_teams`
+Applying migration `20240111091000_team_members`
+Applying migration `20240112091100_add_invites`
+Applying migration `20240113091200_add_projects`
+Applying migration `20240114091300_project_members`
+Applying migration `20240115091400_add_tasks`
+Applying migration `20240116091500_task_labels`
+Applying migration `20240117091600_add_attachments`
+Applying migration `20240118091700_add_webhooks`
+Applying migration `20240119091800_webhook_deliveries`
+Applying migration `20240120091900_add_api_keys`
+Applying migration `20240121092000_add_billing`
+Applying migration `20240122092100_add_invoices`
+Applying migration `20240123092200_add_notifications`
+Applying migration `20240124092300_notification_prefs`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20240101090000_init/
+    └─ migration.sql
+  └─ 20240102090100_add_posts/
+    └─ migration.sql
+  └─ 20240103090200_add_comments/
+    └─ migration.sql
+  └─ 20240104090300_add_tags/
+    └─ migration.sql
+  └─ 20240105090400_post_tags/
+    └─ migration.sql
+  └─ 20240106090500_add_profiles/
+    └─ migration.sql
+  └─ 20240107090600_user_roles/
+    └─ migration.sql
+  └─ 20240108090700_add_sessions/
+    └─ migration.sql
+  └─ 20240109090800_audit_log/
+    └─ migration.sql
+  └─ 20240110090900_add_teams/
+    └─ migration.sql
+  └─ 20240111091000_team_members/
+    └─ migration.sql
+  └─ 20240112091100_add_invites/
+    └─ migration.sql
+  └─ 20240113091200_add_projects/
+    └─ migration.sql
+  └─ 20240114091300_project_members/
+    └─ migration.sql
+  └─ 20240115091400_add_tasks/
+    └─ migration.sql
+  └─ 20240116091500_task_labels/
+    └─ migration.sql
+  └─ 20240117091600_add_attachments/
+    └─ migration.sql
+  └─ 20240118091700_add_webhooks/
+    └─ migration.sql
+  └─ 20240119091800_webhook_deliveries/
+    └─ migration.sql
+  └─ 20240120091900_add_api_keys/
+    └─ migration.sql
+  └─ 20240121092000_add_billing/
+    └─ migration.sql
+  └─ 20240122092100_add_invoices/
+    └─ migration.sql
+  └─ 20240123092200_add_notifications/
+    └─ migration.sql
+  └─ 20240124092300_notification_prefs/
+    └─ migration.sql
+      
+All migrations have been successfully applied.

@@ -1,0 +1,6 @@
+{
+  "name": "tokenwise",
+  "plugins": [
+    { "name": "tokenwise", "source": "./adapters/codex" }
+  ]
+}

@@ -1,1024 +1,243 @@
 <div align="center">
 
-<img src="assets/FastCode.svg" alt="FastCode Logo" width="200"/>
+<h1>
+  <img src="docs/assets/logo.svg" width="48" height="48" align="absmiddle" alt="">
+  TokenWise: Self-Evolving Context with <br> Up to 50% Token Savings
+</h1>
 
-<!-- # FastCode -->
-
-### FastCode: Accelerating and Streamlining Your Code Understanding
-
-| **⚡ High Performance** | **💰 Cost Efficient** | **🚀 Fast & Scalable** |
-
-<a href="https://trendshift.io/repositories/21932?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-21932" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/21932/daily?language=Python" alt="HKUDS%2FFastCode | Trendshift" width="250" height="55"/></a>
-<a href="https://trendshift.io/repositories/21932?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-21932" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/21932/daily" alt="HKUDS%2FFastCode | Trendshift" width="250" height="55"/></a>
-
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 <p>
-  <a href="https://github.com/HKUDS/FastCode/issues/1"><img src="https://img.shields.io/badge/💬WeChat-Group-07c160?style=for-the-badge&logo=wechat&logoColor=white&labelColor=1a1a2e"></a>
-  <a href="https://github.com/HKUDS/FastCode/issues/2"><img src="https://img.shields.io/badge/💬Feishu-Group-3370ff?style=for-the-badge&logo=bytedance&logoColor=white&labelColor=1a1a2e"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-0A7A69?style=flat-square&labelColor=071E1B"></a>
+  <img alt="Agents: 9 and any shell" src="https://img.shields.io/badge/agents-9_%2B_any_shell-0A7A69?style=flat-square&labelColor=071E1B">
+  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/Feishu-Group-E9DBFC?style=flat-square&logo=feishu&logoColor=white" alt="Feishu"></a>
+  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/WeChat-Group-C5EAB4?style=flat-square&logo=wechat&logoColor=white" alt="WeChat"></a>
 </p>
 
-[Features](#-why-fastcode) • [Quick Start](#-quick-start) • [Installation](#-installation) • [MCP Server](#mcp-server-use-in-cursor--claude-code--windsurf) • [Documentation](#-how-it-works)
+**English** · [简体中文](docs/zh/README.md)
 
 </div>
 
----
+<p align="center"><img src="media/images/savings.png" alt="Algorithm development and debugging (iterative bug fixing and algorithm improvement): up to 38% fewer tokens. Long-horizon software engineering (system-level engineering across large multi-module codebases): up to 50% fewer tokens. Large-context Q&amp;A (deep reasoning over long documents and histories): up to 45% fewer tokens. Self-evolution unlocks more savings: TokenWise learns from real workflows and reduces token usage by an additional 27% over time." width="100%"></p>
 
-## 🎯 Why FastCode?
+## Why TokenWise?
 
-FastCode is a token-efficient framework for comprehensive code understanding and analysis: delivering **superior speed**, **exceptional accuracy**, and **cost-effectiveness** for large-scale codebases and software architectures.
+**The Problem: AI agents pay for every token they read—even the ones they do not need.**
 
-🚀 **Superior Speed Advantage** - Runs 3x faster than Cursor and 4x faster than Claude Code.
+- 🗑️ **Redundant and irrelevant tokens**
+  - Repeated instructions, logs, and tool outputs
+  - Outdated information that distracts the agent
 
-💰 **Significant Cost Savings** - Costs 55% less than Cursor and 44% less than Claude Code.
+- 📈 **Growing token costs**
+  - Context expands with every interaction
+  - Each turn pays to process the accumulated history again
 
-⚡ **Highest Accuracy** - Outperforms Cursor and Claude Code with the highest accuracy score.
-
-<div align="center">
-<img src="assets/performance.png" alt="FastCode Performance vs Cost" width="850"/>
-</div>
-
----
-
-## Key Features of FastCode
-
-### 🎯 Core Performance Advantages
-- 2-4x Faster than competitors (Cursor/Claude Code)
-- 44-55% Cost Reduction compared to alternatives
-- Highest Accuracy Score across benchmarks
-- Up to 10x Token Savings through smart navigation
-
-### 🛠️ Technical Capabilities
-- Large-Scale Repository Analysis - Handle massive codebases efficiently
-- Multi-Language Support - Python, JavaScript, TypeScript, Java, Go, C/C++, Rust, C#
-- Multi-Repository Reasoning - Cross-repo dependency analysis
-- Small Model Support - Local model compatibility (qwen3-coder-30b)
-
-### 💻 User Experience
-- **MCP Server** - Use FastCode directly through MCP integration (e.g., Cursor, Claude Code)
-- Beautiful Web UI - Intuitive codebase exploration
-- Flexible API - Easy workflow integration
-- Smart Structural Navigation - Load only what you need
+- 🧠 **No self-evolving context**
+  - Fixed rules cannot learn from changing workflows
+  - Each agent starts over instead of reusing what works
 
 ---
 
-## 🎥 See FastCode in Action
+### The TokenWise Approach
 
-<div align="center">
+- ✂️ **Read less. Keep what matters.**  
+  Remove noise before it reaches the model while preserving task-critical context.
 
-[![Watch FastCode Demo](https://img.youtube.com/vi/NwexLWHPBOY/0.jpg)](https://youtu.be/NwexLWHPBOY)
+- 🧠 **Evolve with every workflow.**  
+  Learn from real usage and adapt to new tools, commands, and context.
 
-**Click to watch FastCode in action** - See how FastCode analyzes complex codebases with lightning speed.
+- 🔄 **Learn once. Improve every agent.**  
+  Share proven optimization strategies across agents and platforms.
 
----
+- 📊 **See every token saved.**  
+  Track per-response and cumulative savings in real time.
 
-</div>
+## 🤖 Drop-In Plugin for the Agents You Already Use
 
-### Core Technologies Behind FastCode
+<table width="100%">
+  <tr>
+    <td align="center" width="16%"><img src="media/agents/claude-code.svg" width="48" height="48" alt=""><br><strong>Claude Code</strong></td>
+    <td align="center" width="16%"><img src="media/agents/codex.svg" width="48" height="48" alt=""><br><strong>Codex</strong></td>
+    <td align="center" width="16%"><img src="media/agents/copilot.svg" width="48" height="48" alt=""><br><strong>GitHub Copilot CLI</strong></td>
+    <td align="center" width="16%"><img src="media/agents/hermes.svg" width="48" height="48" alt=""><br><strong>Hermes Agent</strong></td>
+    <td align="center" width="16%"><img src="media/agents/opencode.svg" width="48" height="48" alt=""><br><strong>OpenCode</strong></td>
+    <td align="center" width="16%"><img src="media/agents/codebuddy.svg" width="48" height="48" alt=""><br><strong>CodeBuddy</strong></td>
+  </tr>
+  <tr>
+    <td align="center" width="16%"><img src="media/agents/grok.svg" width="48" height="48" alt=""><br><strong>Grok Build</strong></td>
+    <td align="center" width="16%"><img src="media/agents/dsh.svg" width="48" height="48" alt=""><br><strong>DeepSeek Harness</strong></td>
+    <td align="center" width="16%"><img src="media/agents/pi.svg" width="48" height="48" alt=""><br><strong>pi</strong></td>
+    <td align="center" width="16%"><img src="media/images/icons/agent-shell.png" width="48" height="48" alt=""><br><strong>Any shell</strong></td>
+    <td align="center" width="16%"><a href="#whats-next"><img src="media/images/icons/agent-more.png" width="48" height="48" alt=""><br><strong>More coming</strong></a></td>
+  </tr>
+</table>
 
-FastCode introduces a three-phase framework that transforms how LLMs understand and navigate codebases:
 
-<p align="center">
-  <img src="assets/framework.png" alt="FastCode Framework" width="100%"/>
-</p>
+## 🪙 See How Much TokenWise Saves
 
-## 🏗️ Semantic-Structural Code Representation
+**Every response shows the tokens saved and the reduction percentage—directly inside your agent.**
 
-### Multi-layered codebase understanding for comprehensive analysis
+<p align="center"><img src="media/images/cards.png" alt="The card at the end of an answer in Claude Code, Codex, GitHub Copilot CLI, Hermes Agent, OpenCode, CodeBuddy, Grok Build, DeepSeek Harness and pi" width="100%"></p>
 
-- **🔍 Hierarchical Code Units** — Advanced multi-level indexing spanning files, classes, functions, and documentation using AST-based parsing across 8+ programming languages
+<sub>Results are based on one real-world run with each agent.</sub>
 
-- **🔗 Hybrid Index** — Seamlessly combines semantic embeddings with keyword search (BM25) for robust and precise code retrieval
+## 🚀 Get Started
 
-- **📊 Multi-Layer Graph Modeling** — Three interconnected relationship graphs (Call Graph, Dependency Graph, Inheritance Graph) enabling structural navigation across the entire codebase
+### Install with Your Agent - Recommended
 
-### 🧭 Lightning-Fast Codebase Navigation
-
-Finding the right code without opening every file - at lightning speed
-
-- **⚡ Two-Stage Smart Search** — Like having a research assistant that first finds potentially relevant code, then ranks and organizes the best matches for your specific question.
-
-- **📁 Safe File Browsing** — Explores your project structure securely, understanding folder organization and file patterns without compromising security.
-
-- **🌐 Following Code Connections** — Traces how code pieces connect (up to 2 steps away), like following a trail of breadcrumbs through your codebase.
-
-- **🎯 Code Skimming** — Instead of reading entire files, FastCode just looks at the "headlines" - function names, class definitions, and type hints. This is like reading a book's chapter titles instead of every page, saving massive amounts of processing power.
-
-### 💰 Cost-Efficient Context Management
-
-Getting maximum insight while minimizing costs - automatically
-
-- **📈 Budget-Aware Decision Making** — Considers five key factors before processing: confidence level, query complexity, codebase size, resource cost, and iteration count. Like a cost-conscious financial advisor that weighs all options before making decisions.
-
-- **🔄 Resource-Optimized Learning** — Continuously adapts its approach in real-time, getting more efficient about what information to gather and when to stop. Think of it as an AI that maximizes value and becomes more cost-effective with every query.
-
-- **🎯 Value-First Selection** — Prioritizes high-impact, low-cost information first, like choosing the ripest fruit at the best price. This cost-optimized approach ensures you get maximum value for every token spent until the perfect stopping point is reached.
-
----
-
-## 📊 Benchmark Performance
-
-FastCode has been rigorously tested on four major benchmarks representing real-world software engineering challenges:
-
-### 🎯 Evaluation Datasets
-
-| Benchmark | Focus Area | What It Tests |
-|-----------|------------|---------------|
-| SWE-QA | Software Engineering Q&A | Complex technical question answering |
-| LongCodeQA | Extended Code Analysis | Long-context code understanding |
-| LOC-BENCH | Code Localization | Bug detection & feature requests |
-| GitTaskBench | Real-World Tasks | Production repository workflows |
-
-### 🏆 Outstanding Results
-- ✅ **Superior Accuracy** — Consistently outperforms state-of-the-art baselines across all benchmarks
-
-- ✅ **10x Token Efficiency** — Achieves better results while using up to 90% fewer tokens
-
-- ✅ **Real-World Validation** — Proven performance on actual production codebases and workflows
-
----
-
-## 🚀 Quick Start
-
-Get FastCode running in under 2 minutes:
+Paste the following into your agent:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/HKUDS/FastCode.git
-cd FastCode
+Install TokenWise for every supported agent on this machine and verify that each integration works.
 
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Configure your API keys
-cp env.example .env
-# Edit .env with your API keys
-
-# 4. Launch the Web UI
-python web_app.py --host 0.0.0.0 --port 5000
+Repository: https://github.com/HKUDS/TokenWise
 ```
 
-Open http://localhost:5000 and start asking questions about your code! 🎉
+TokenWise starts working with your next command—no configuration required.
 
----
-
-## 📦 Installation
-
-FastCode supports **Linux**, **macOS**, and **Windows**. Choose your platform below:
-
-> **💡 Recommendation:** We recommend using [uv](https://github.com/astral-sh/uv) for faster and more reliable dependency installation.
-
-<details>
-<summary><b>🐧 Linux Installation</b></summary>
-
-### Prerequisites
-- Python 3.12 or higher
-- Git
-
-### Step-by-Step Guide
-
-1. **Clone FastCode**
-   ```bash
-   git clone https://github.com/HKUDS/FastCode.git
-   cd FastCode
-   ```
-
-2. **Install Dependencies**
-
-   **Option A: Using uv (Recommended)**
-   ```bash
-   # Install uv
-   pip install uv
-   # create new env with uv
-   uv venv --python=3.12
-   source .venv/bin/activate
-
-   # Install dependencies with uv
-   uv pip install -r requirements.txt
-   ```
-
-   **Option B: Using pip**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure Environment**
-   ```bash
-   cp env.example .env
-   nano .env  # or use your preferred editor
-   ```
-
-   Add your API keys:
-   ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   MODEL=gpt-5.2
-   BASE_URL=https://api.openai.com/v1
-   ```
-
-4. **Launch FastCode**
-   ```bash
-   # Web UI (Recommended)
-   python web_app.py --host 0.0.0.0 --port 5000
-
-   # Or use the CLI
-   python main.py query --repo-path /path/to/your/repo --query "Your question here"
-   ```
-
-</details>
-
-<details>
-<summary><b>🍎 macOS Installation</b></summary>
-
-### Prerequisites
-- Python 3.12 or higher
-- Git
-
-### Step-by-Step Guide
-
-1. **Clone FastCode**
-   ```bash
-   git clone https://github.com/HKUDS/FastCode.git
-   cd FastCode
-   ```
-
-2. **Install Dependencies**
-
-   **Option A: Using uv (Recommended)**
-   ```bash
-   # Install uv
-   pip install uv
-   # create new env with uv
-   uv venv --python=3.12
-   source .venv/bin/activate
-
-   # Install dependencies with uv
-   uv pip install -r requirements.txt
-   ```
-
-   **Option B: Using pip**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure Environment**
-   ```bash
-   cp env.example .env
-   nano .env  # or use: open -e .env
-   ```
-
-   Add your API keys:
-   ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   MODEL=gemini-3-flash
-   BASE_URL=https://...
-   ```
-
-4. **Launch FastCode**
-   ```bash
-   # Web UI (Recommended)
-   python web_app.py --host 0.0.0.0 --port 5000
-
-   # Or use the CLI
-   python main.py query --repo-path /path/to/your/repo --query "Your question here"
-   ```
-
-**Note for Apple Silicon (M1/M2/M3):** All dependencies are compatible with ARM architecture.
-
-</details>
-
-<details>
-<summary><b>💻 Windows Installation</b></summary>
-
-### Prerequisites
-- Python 3.12 or higher
-- Git
-
-### Step-by-Step Guide
-
-1. **Clone FastCode**
-   ```cmd
-   git clone https://github.com/HKUDS/FastCode.git
-   cd FastCode
-   ```
-
-2. **Install Dependencies**
-
-   **Option A: Using uv (Recommended)**
-   ```cmd
-   # Install uv
-   pip install uv
-   # create new env with uv
-   uv venv --python=3.12
-   .venv\Scripts\activate
-
-   # Install dependencies with uv
-   uv pip install -r requirements.txt
-   ```
-
-   **Option B: Using pip**
-   ```cmd
-   pip install -r requirements.txt
-   ```
-
-3. **Configure Environment**
-   ```cmd
-   copy env.example .env
-   notepad .env
-   ```
-
-   Add your API keys:
-   ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   MODEL=qwen/qwen3-coder-30b-a3b-instruct
-   BASE_URL=https://api.openai.com/v1
-   ```
-
-4. **Launch FastCode**
-   ```cmd
-   # Web UI (Recommended)
-   python web_app.py --host 0.0.0.0 --port 5000
-
-   # Or use the CLI
-   python main.py query --repo-path C:\path\to\your\repo --query "Your question here"
-   ```
-
-**Troubleshooting:**
-- If you get SSL errors: `pip install --upgrade certifi`
-- For permission errors, run Command Prompt as Administrator
-- If `faiss-cpu` fails to install: `pip install faiss-cpu --no-cache-dir`
-- If you run `./run_nanobot.sh` (bash script) on Windows, use **Git Bash** or **WSL**, and keep `.sh` files in **LF** line endings. This repo enforces LF for `*.sh` via `.gitattributes`, but older clones may need a one-time re-checkout.
-
-</details>
-
----
-
-## 🎮 Usage
-
-### Web Interface (Recommended)
-
-The Web UI provides the most intuitive experience:
-
-1. **Launch the server:**
-   ```bash
-   python web_app.py --host 0.0.0.0 --port 5000
-   ```
-
-2. **Open your browser:** Navigate to http://localhost:5000
-
-3. **Load a repository:** Use the sidebar to index your codebase
-
-4. **Start asking questions:**
-   - "Where is the authentication logic implemented?"
-   - "How does the payment processing flow work?"
-   - "What files would be affected if I change the User model?"
-   - "Explain the dependency between module A and module B"
-
-### Command Line Interface
-
-For automation and scripting:
+To add custom optimization rules, invoke TokenWise from your agent:
 
 ```bash
-# Single repository query
-python main.py query --repo-path /path/to/repo --query "Your question"
-
-# Multi-repository query
-python main.py query --repos /path/to/repo1 /path/to/repo2 --query "Your question"
-
-# With custom model
-python main.py query --repo-path /path/to/repo --query "Your question" --model gpt-4-turbo
+/tokenwise          # Claude Code and other supported agents
+$tokenwise          # Codex
+@tokenwise          # OpenCode and DeepSeek Harness
+/skill:tokenwise    # pi
 ```
 
-<details>
-<summary><b>REST API</b></summary>
+### Install Manually
 
-Integrate FastCode into your tools with the comprehensive REST API:
+Requirements: **Node.js 22** and **pnpm**.
 
 ```bash
-# Start the API server
-python api.py --host 0.0.0.0 --port 8000
+# Clone and build TokenWise
+git clone https://github.com/HKUDS/TokenWise.git
+cd TokenWise
+pnpm install
+pnpm build
+
+# Install the CLI globally
+npm install -g ./packages/cli
+
+# Detect your agents and install TokenWise
+tokenwise setup
+
+# Verify every agent integration
+tokenwise doctor --probe
 ```
 
-The API provides all features available in the Web UI. Visit http://localhost:8000/docs for interactive API documentation.
+<p align="center"><a href="https://youtu.be/9p36ZR2rNtE"><img src="media/video/promo.gif" alt="TokenWise in nine agents: noise turns into coins, every answer ends with what was saved, and the savings grow through the week" width="100%"></a></p>
+<p align="center"><sub>▶ <a href="https://youtu.be/9p36ZR2rNtE">Watch the video on YouTube</a> · 35 seconds</sub></p>
 
-**Key API Endpoints:**
+Available on **macOS and Linux**. Integration depth varies by agent; see [connection details](#how-each-agent-is-connected).
+
+## What’s Next
+- **More agents** — Cursor, Gemini CLI, Kimi Code, and more.
+- **Shared context learning** — Transfer proven context strategies across agents.
+- **Task-aware context** — Adapt context for coding, research, and long-running tasks.
+- **Context observability** — Show what is removed, retained, and why.
+- **Performance-aware optimization** — Save more tokens while preserving task-critical context.
+
+## Agent-Readable Setup & Integration
 
 <details>
-<summary><b>Repository Management</b></summary>
+<summary><strong>Install by hand, agent by agent</strong></summary>
+<br>
 
-```bash
-# List available and loaded repositories
-GET /repositories
+From the checkout, after `npm install -g ./packages/cli`:
 
-# Load a repository from URL or local path
-POST /load
-{
-  "source": "https://github.com/user/repo",
-  "is_url": true
-}
+```sh
+pi install "$PWD/adapters/pi"                                   # pi
+dsh plugin --profile web add -w "$PWD/adapters/dsh"             # DeepSeek Harness (your profile)
+claude plugin marketplace add "$PWD" && claude plugin install tokenwise@tokenwise
+codex plugin marketplace add "$PWD" && codex plugin add tokenwise@tokenwise    # then trust its hooks in /hooks
+codebuddy plugin marketplace add "$PWD" && codebuddy plugin install tokenwise@tokenwise
+grok plugin marketplace add "$PWD" && grok plugin install tokenwise@tokenwise --trust
+copilot plugin marketplace add "$PWD" && copilot plugin install tokenwise@tokenwise
 
-# Index the loaded repository
-POST /index?force=false
+# OpenCode
+mkdir -p ~/.config/opencode/plugins
+cp adapters/opencode/dist/index.js ~/.config/opencode/plugins/tokenwise.js
 
-# Load and index in one call
-POST /load-and-index
-{
-  "source": "/path/to/repo",
-  "is_url": false
-}
+# Hermes Agent
+mkdir -p ~/.hermes/plugins
+cp -R adapters/hermes/tokenwise ~/.hermes/plugins/tokenwise
+hermes plugins enable tokenwise && hermes config set context.engine tokenwise
 
-# Load multiple existing indexed repositories
-POST /load-repositories
-{
-  "repo_names": ["repo1", "repo2"]
-}
+# The tokenwise skill, where each agent reads skills
+cp -R skills/tokenwise ~/.claude/skills/            # Claude Code; likewise ~/.codebuddy/skills, ~/.grok/skills,
+                                                    # ~/.config/opencode/skills, ~/.hermes/skills and ~/.copilot/skills
+cp -R skills/tokenwise ~/.agents/skills/            # Codex, pi and DeepSeek Harness
 
-# Index multiple repositories at once
-POST /index-multiple
-{
-  "sources": [
-    {"source": "https://github.com/user/repo1", "is_url": true},
-    {"source": "/path/to/repo2", "is_url": false}
-  ]
-}
-
-# Upload repository as ZIP file
-POST /upload-zip
-Content-Type: multipart/form-data
-file: <zip_file>
-
-# Upload and index in one call
-POST /upload-and-index?force=false
-Content-Type: multipart/form-data
-file: <zip_file>
-
-# Delete repositories and their indexes
-POST /delete-repos
-{
-  "repo_names": ["repo1", "repo2"],
-  "delete_source": true
-}
-
-# Get repository summary
-GET /summary
-```
-</details>
-
-<details>
-<summary><b>Query & Conversation</b></summary>
-
-```bash
-# Query repository (single response)
-POST /query
-{
-  "question": "How does authentication work?",
-  "filters": null,
-  "repo_filter": ["repo1"],
-  "multi_turn": false,
-  "session_id": null
-}
-
-# Query with streaming response (SSE)
-POST /query-stream
-{
-  "question": "Explain the database schema",
-  "multi_turn": true,
-  "session_id": "abc123"
-}
-
-# Start a new conversation session
-POST /new-session?clear_session_id=old_session
-
-# List all conversation sessions
-GET /sessions
-
-# Get conversation history
-GET /session/{session_id}
-
-# Delete a conversation session
-DELETE /session/{session_id}
-```
-</details>
-
-<details>
-<summary><b>System & Status</b></summary>
-
-```bash
-# Health check
-GET /health
-
-# Get system status
-GET /status?full_scan=false
-
-# Clear cache
-POST /clear-cache
-
-# Get cache statistics
-GET /cache-stats
-
-# Refresh index cache
-POST /refresh-index-cache
-
-# Unload current repository
-DELETE /repository
-```
-</details>
-
-**Example Usage:**
-
-```python
-import requests
-
-# Start a session and query
-response = requests.post("http://localhost:8000/load-and-index", json={
-    "source": "https://github.com/user/repo",
-    "is_url": True
-})
-
-# Query the repository
-response = requests.post("http://localhost:8000/query", json={
-    "question": "Where is the main entry point?",
-    "multi_turn": False
-})
-
-result = response.json()
-print(result["answer"])
-print(f"Tokens used: {result['total_tokens']}")
+# Anything else: wrap the command
+tokenwise run -c 'cargo test'
 ```
 
-</details>
-
-<a id="mcp-server-use-in-cursor--claude-code--windsurf"></a>
-<details>
-<summary><b>MCP Server (Use in Cursor / Claude Code / Windsurf)</b></summary>
-
-FastCode can run as an [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server, allowing AI coding assistants like **Cursor**, **Claude Code**, and **Windsurf** to use FastCode's repo-level code understanding capabilities directly.
-
-#### Setup
-
-Add the following to your MCP configuration:
-
-Before configuring MCP, make sure FastCode dependencies are installed in the local uv virtual environment:
-
-```bash
-git clone https://github.com/HKUDS/FastCode.git
-cd FastCode
-uv venv --python=3.12
-source .venv/bin/activate
-uv pip install -r requirements.txt
-```
-
-The MCP server should be launched with `.venv/bin/python`, and it needs `OPENAI_API_KEY`, `MODEL`, and `BASE_URL`.
-
-**Cursor** (`~/.cursor/mcp.json`):
-```json
-{
-  "mcpServers": {
-    "fastcode": {
-      "command": "/path/to/FastCode/.venv/bin/python",
-      "args": ["/path/to/FastCode/mcp_server.py"],
-      "env": {
-        "MODEL": "gpt-5.2",
-        "BASE_URL": "https://api.openai.com/v1",
-        "OPENAI_API_KEY": "sk-..."
-      }
-    }
-  }
-}
-```
-
-**Claude Code** (`claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "fastcode": {
-      "command": "/path/to/FastCode/.venv/bin/python",
-      "args": ["/path/to/FastCode/mcp_server.py"],
-      "env": {
-        "MODEL": "gpt-5.2",
-        "BASE_URL": "https://api.openai.com/v1",
-        "OPENAI_API_KEY": "sk-..."
-      }
-    }
-  }
-}
-```
-
-Or via `claude mcp add` (ensure the same env vars are available in your shell):
-```bash
-claude mcp add fastcode -- /path/to/FastCode/.venv/bin/python /path/to/FastCode/mcp_server.py
-```
-
-**SSE transport** (for remote / shared deployments):
-```bash
-OPENAI_API_KEY=sk-... MODEL=gpt-5.2 BASE_URL=https://api.openai.com/v1 \
-/path/to/FastCode/.venv/bin/python /path/to/FastCode/mcp_server.py --transport sse --port 8080
-```
-
-#### Available Tools
-
-| Tool | Description |
-|------|-------------|
-| `code_qa` | Core tool — ask questions about one or more code repositories. Automatically clones (if URL) and indexes repos that haven't been indexed yet. Supports multi-turn conversations. |
-| `list_indexed_repos` | List all repositories that have been indexed and are available for querying. |
-| `list_sessions` | List all existing conversation sessions with titles and turn counts. |
-| `get_session_history` | Retrieve the full Q&A history of a specific session. |
-| `delete_session` | Delete a conversation session and all its history. |
-| `delete_repo_metadata` | Delete indexed metadata for a repository (`.faiss`, `_metadata.pkl`, `_bm25.pkl`, `_graphs.pkl`) and remove its entry from `repo_overviews.pkl`, while keeping the repository source code. |
-
-#### `code_qa` Parameters
-
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `question` | Yes | — | The question to ask about the code |
-| `repos` | Yes | — | List of repo sources (GitHub URLs or local paths). Multiple repos supported. |
-| `multi_turn` | No | `true` | Enable multi-turn conversation mode |
-| `session_id` | No | auto-generated | Session ID for continuing a conversation. Returned in the response of each call. |
-
-#### How It Works
-
-1. **Auto-detection**: For each repo in `repos`, FastCode checks if it's already indexed. If yes, it skips indexing entirely.
-2. **Auto-clone**: If a repo is a URL and not yet on disk, FastCode clones it to `./repos/` and indexes it.
-3. **Multi-turn**: When `multi_turn` is enabled (default), previous Q&A context from the same `session_id` is used for query rewriting and answer generation. The `session_id` is returned in each response — pass it back in subsequent calls to continue the conversation.
-4. **Multi-repo**: Pass multiple repos to `repos` and FastCode will search across all of them, using LLM-based repository selection to find the most relevant code.
-
-#### Usage Example
-
-In Cursor or Claude Code, simply ask:
-
-```
-Use FastCode to analyze what this repository at /path/to/repo_name is for.
-```
-
-or
-
-```
-Use FastCode to analyze the authentication flow in https://github.com/user/my-project
-```
-
-The AI assistant will call `code_qa` with the URL, FastCode will clone and index the repo (if needed), and return a detailed answer with source references.
-
-For follow-up questions, the assistant reuses the same `session_id` automatically:
-
-```
-Which files would be affected if I change the User model?
-```
-
-</details>
-
----
-
-
-## 🔧 Configuration
-
-### Supported LLM Providers
-
-FastCode works with multiple LLM providers:
-
-<details>
-<summary><b>OpenAI</b></summary>
-
-```env
-OPENAI_API_KEY=sk-...
-MODEL=gpt-4
-BASE_URL=https://api.openai.com/v1
-```
-</details>
-
-<!-- <details>
-<summary><b>Anthropic Claude</b></summary>
-
-```env
-OPENAI_API_KEY=sk-ant-...
-MODEL=claude-3-opus-20240229
-BASE_URL=https://api.anthropic.com/v1
-```
-</details> -->
-
-<details>
-<summary><b>OpenRouter (Multiple Models)</b></summary>
-
-```env
-OPENAI_API_KEY=sk-or-...
-MODEL=google/gemini-flash-1.5
-BASE_URL=https://openrouter.ai/api/v1
-```
-</details>
-
-<details>
-<summary><b>Local Models (Ollama)</b></summary>
-
-```env
-OPENAI_API_KEY=ollama
-MODEL=qwen3-coder-30b_fastcode
-BASE_URL=http://localhost:11434/v1
-```
-</details>
-
-### Supported Languages
-
-FastCode automatically detects and parses:
-- 🐍 Python
-- 📜 JavaScript / TypeScript
-- ☕ Java
-- 🦀 Rust
-- 🐹 Go
-- ⚙️ C / C++
-- 💎 C#
-
----
-
-
-## 🤖 Nanobot + Feishu (Lark) Integration (Docker Deployment)
-
-FastCode can be integrated with a Feishu (Lark) bot via [Nanobot](https://github.com/nanobot-ai/nanobot), enabling conversational code repository queries directly within Feishu.
-
-### Architecture
-
-```
-Feishu User ←→ Feishu Open Platform ←→ Nanobot (WebSocket) ←→ FastCode API
-                                        (port 18791)            (port 8001)
-```
-
-- **FastCode Container**: Provides the code analysis REST API (port 8001)
-- **Nanobot Container**: Connects to Feishu via WebSocket and invokes FastCode tools (port 18791)
-- Both containers communicate over Docker's internal network — no public IP required
-
-### Quick Start
-
-```bash
-# One-command launch (automatically builds images and generates config on first run)
-./run_nanobot.sh
-
-# Subsequent runs auto-detect the current state:
-# - Services running → show status + health check
-# - Services stopped → auto-restart
-# - Images not found → auto-build and start
-```
-
-<details>
-<summary><b>Configuration</b></summary>
-
-#### 1. Unified Configuration (`.env`)
-
-All API keys and model settings are centralized in the `.env` file, shared by both services:
-
-```bash
-# ===== Shared API Configuration =====
-OPENAI_API_KEY=sk-or-v1-xxx        # Shared by both services
-BASE_URL=https://openrouter.ai/api/v1
-
-# ===== FastCode Model (Code Analysis) =====
-MODEL=google/gemini-3-flash-preview
-
-# ===== Nanobot Model (Agent Reasoning / Feishu Conversations) =====
-NANOBOT_MODEL=minimax/minimax-m2.1
-```
-
-The API key is automatically injected into the Nanobot container via `docker-compose.yml` environment variables — no need to duplicate it in `nanobot_config.json`.
-
-#### 2. FastCode Core Configuration
-
-- `config/config.yaml` — FastCode retrieval and indexing settings
-
-#### 3. Nanobot Configuration (`nanobot_config.json`)
-
-`run_nanobot.sh` auto-generates this file. You only need to configure **Feishu credentials and the systemPrompt** here; API keys and model settings are managed centrally via `.env`.
-
-```json
-{
-  "channels": {
-    "feishu": {
-      "enabled": true,
-      "appId": "cli_xxxxxxxxx",
-      "appSecret": "your_app_secret"
-    }
-  }
-}
-```
+`tokenwise setup` runs these for you; `tokenwise setup --dry-run` only prints them.
 
 </details>
 
 <details>
-<summary><b>Feishu App Setup</b></summary>
+<summary><strong id="how-each-agent-is-connected">How each agent is connected</strong></summary>
+<br>
 
-Nanobot receives Feishu messages via a WebSocket long-lived connection — **no public IP or webhook required**.
+| Agent | Context on demand | Learning from inside the agent |
+|---|---|---|
+| pi 1.1+ | in-process; TokenWise writes the compacted context | `/tokenwise` panel |
+| DeepSeek Harness 0.2.x | in-process; TokenWise writes the compacted context | Plugins page, **Learn now** |
+| OpenCode 1.19+ | in-process; TokenWise writes the compacted context | `tokenwise learn` |
+| Hermes Agent 0.22+ | Python plugin and context engine | `tokenwise learn` |
+| Claude Code 2.1+ | hooks; the catalog follows Claude's own summary | `/tokenwise:learn` |
+| Codex 0.162+ | hooks; the catalog follows Codex's own summary | `$tokenwise learn` |
+| CodeBuddy 2.175+ | hooks and a mod that rewrites the stored summary | `/tokenwise:learn` |
+| Grok Build 1.0+ | hooks; the catalog follows Grok's own summary | `/tokenwise:learn` |
+| GitHub Copilot CLI 1.0+ | hooks; shell output only (Copilot compacts with its own summary) | `tokenwise learn` |
+| Any agent or shell | `tokenwise run`, recall over MCP | `tokenwise learn` |
 
-#### 1. Create an App
-
-Go to the [Feishu Open Platform](https://open.feishu.cn/app) → Create a **Custom Enterprise App** → Note the **App ID** (`cli_xxx`) and **App Secret**.
-
-#### 2. Enable Bot Capability
-
-Navigate to App Settings → **App Features** → Enable the "Bot" capability.
-
-#### 3. Add Permissions
-
-Add the following permissions under **Permission Management**:
-
-| Permission | Description |
-|------------|-------------|
-| `im:message` | Read messages |
-| `im:message:send_as_bot` | Send messages as the bot |
-| `im:resource` | Access resource files in messages |
-| `im:chat` | Retrieve group chat information |
-
-#### 4. Configure Event Subscriptions
-
-> ⚠️ **Note the order**: You must start Nanobot to establish the WebSocket connection first, then configure event subscriptions in the Feishu admin console.
-
-1. Enter `appId` and `appSecret` in `nanobot_config.json`, then start the service (`./run_nanobot.sh`)
-2. Verify the log shows `connected to wss://msg-frontier.feishu.cn`, confirming a successful connection
-3. Go back to the Feishu admin console → **Events & Callbacks** → Select "**Receive events via long-lived connection**" → Save
-4. Add event: `im.message.receive_v1` (Receive messages)
-
-#### 5. Publish the App
-
-Go to **Version Management** → Create a version → Submit for review (internal enterprise apps can be self-approved) → Once published, you can chat with the bot in Feishu.
+Every agent also gets the `tokenwise` skill: `/tokenwise`, `$tokenwise` in Codex,
+`@tokenwise` in OpenCode and DeepSeek Harness, `/skill:tokenwise` in pi. Each agent's folder under [`adapters/`](adapters) has the details;
+[docs/adapters.md](docs/adapters.md) shows how to connect another agent.
 
 </details>
 
 <details>
-<summary><b>Docker Compose Structure</b></summary>
+<summary><strong>Commands</strong></summary>
+<br>
 
-```yaml
-services:
-  fastcode:          # FastCode API (port 8001)
-    build: .
-    volumes:
-      - ./.env:/app/.env:ro
-      - ./config:/app/config:ro
-      - ./data:/app/data
-      - ./repos:/app/repos
+| Command | What it does |
+|---|---|
+| `tokenwise setup [agent...]`, `uninstall [--purge]` | add TokenWise to your agents, or take it out |
+| `tokenwise saved [--month\|--all]` | what TokenWise saved you, as a pixel jar in the terminal (`--json` for the numbers) |
+| `tokenwise dashboard [--port N] [--no-open]` | the same jar as a page in your browser, filling as it saves |
+| `tokenwise report [--host H] [--session S]` | the detailed numbers behind `saved`, per session or agent, for troubleshooting |
+| `tokenwise checkup` | what it shortens, its learned rules, and the commands worth teaching it |
+| `tokenwise teach "<command>"`, `teach check\|preview\|keep\|drop` | teach it one command from your own agent |
+| `tokenwise preview "<command>"` | a recorded output of that command: the original and what the model reads |
+| `tokenwise learn --learner L`, `learn status\|cancel` | start learning in the background, follow it, stop it |
+| `tokenwise rules [list\|off\|on\|rollback]` | the learned rules |
+| `tokenwise filters` | every built-in rule and what it guarantees to keep |
+| `tokenwise recall <id>` | read a set-aside original back |
+| `tokenwise run -c '<command>'` | run any command through TokenWise |
+| `tokenwise doctor [--probe]` | whether TokenWise works in each of your agents (`--probe`: each runs one command to prove it), configuration, what each agent supports |
 
-  nanobot:           # Nanobot Gateway (port 18791 → 18790)
-    build: ./nanobot
-    command: ["gateway"]
-    volumes:
-      - ./nanobot_config.json:/root/.nanobot/config.json:ro
-    environment:
-      - FASTCODE_API_URL=http://fastcode:8001
-      # API key and model injected from .env
-      - NANOBOT_PROVIDERS__OPENROUTER__API_KEY=${OPENAI_API_KEY}
-      - NANOBOT_AGENTS__DEFAULTS__MODEL=${NANOBOT_MODEL}
-    depends_on:
-      - fastcode
-```
+`tw` works in place of `tokenwise` everywhere.
 
 </details>
 
 <details>
-<summary><b>Management Commands</b></summary>
+<summary><strong>Configuration and privacy</strong></summary>
+<br>
 
-| Command | Description |
-|---------|-------------|
-| `./run_nanobot.sh` | Smart launch (auto-detects state) |
-| `./run_nanobot.sh --build` | Force rebuild images |
-| `./run_nanobot.sh --fg` | Run in foreground (view live logs) |
-| `./run_nanobot.sh stop` | Stop all services |
-| `./run_nanobot.sh restart` | Restart all services |
-| `./run_nanobot.sh logs` | View live logs |
-| `./run_nanobot.sh status` | View service status + health check |
-| `./run_nanobot.sh config` | Re-check / regenerate Nanobot config |
-| `./run_nanobot.sh clean` | Stop and remove containers and images |
+Nothing needs configuring. To change something, write `~/.tokenwise/config.json`;
+`TOKENWISE_DISABLE=1` switches everything off for one run. Every `TOKENWISE_*`
+setting can also be written `TW_*` (`TW_HOME`, `TW_DISABLE`): Codex and DSH drop
+variables with TOKEN in their name from the shells they run.
 
-</details>
-
-<details>
-<summary><b>Registered FastCode Tools in Nanobot</b></summary>
-
-On startup, Nanobot automatically registers the following tools via the `FASTCODE_API_URL` environment variable:
-
-| Tool Name | Function |
-|-----------|----------|
-| `fastcode_load_repo` | Load and index a code repository (GitHub URL or local path) |
-| `fastcode_query` | Query code using natural language, with multi-turn conversation support |
-| `fastcode_list_repos` | List loaded / available repositories |
-| `fastcode_status` | View FastCode system status |
-| `fastcode_session` | Manage conversation sessions (create / list / history / delete) |
+Everything stays on your machine: originals are readable only by you and deleted
+after 14 days. The one thing that leaves your machine is a learning round you
+start yourself: the learner is your own agent, so the recorded output it reads
+goes to that agent's model provider, as it did when the agent first ran the
+commands. Set `"evidence": false` to record nothing.
 
 </details>
 
-### Feishu Usage Example
+[Architecture](docs/architecture.md) · [Adding an agent](docs/adapters.md) · [Changelog](CHANGELOG.md) · [Media kit](media/README.md) · [MIT License](LICENSE)
 
-Chat with the bot in Feishu:
-
-```
-User: https://github.com/user/repo
-Bot:  ✓ Repository loaded and indexed (152 files, 3847 code elements)
-
-User: How is the authentication logic implemented in this project?
-Bot:  This project uses JWT for authentication... [detailed analysis]
-
-User: Which files would be affected by changes to the User model?
-Bot:  The following 8 files would be affected... [impact analysis]
-```
-
----
-
-
-## 🧠 How It Works
-
-FastCode uses a novel **scouting-first** approach that fundamentally differs from traditional code reasoning systems:
-
-### Traditional Approach ❌
-```
-Question → Load Files → Search → Load More Files → Search Again → ... → Answer
-💸 High token cost from repeated file loading
-```
-
-### FastCode Approach ✅
-```
-Question → Build Semantic Map → Navigate Structure → Load Targets → Answer
-💰 Minimal token cost with precise targeting
-```
-
-
----
-
-## 📚 Examples
-
-### Example 1: Understanding Authentication Flow
-
-**Query:** "How does user authentication work in this application?"
-
-**FastCode Process:**
-1. 🗺️ Scouts for authentication-related structures
-2. 🔍 Identifies `auth.py`, `middleware.py`, `user_model.py`
-3. 📊 Traces dependencies between these files
-4. 📖 Loads only relevant functions
-5. ✅ Provides comprehensive answer
-
-### Example 2: Impact Analysis
-
-**Query:** "What would break if I change the User model schema?"
-
-**FastCode Process:**
-1. 🗺️ Locates User model definition
-2. 🔗 Traces all imports and usages
-3. 📊 Maps dependency graph
-4. 📖 Loads affected code sections
-5. ✅ Lists all impacted files and functions
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! FastCode is built for the community, by the community.
-
-### Ways to Contribute
-
-- 🐛 **Report Bugs** - Found an issue? Let us know!
-- 💡 **Suggest Features** - Have ideas? We'd love to hear them!
-- 📝 **Improve Documentation** - Help others understand FastCode better
-- 🔧 **Submit Pull Requests** - Code contributions are always welcome
-
-<!-- ### Development Setup
-
-```bash
-# Clone and setup
-git clone https://github.com/HKUDS/FastCode.git
-cd FastCode
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install -r requirements.txt
-
-# Run tests
-pytest tests/
-
-# Code formatting
-black .
-``` -->
-
----
-
-## 📄 License
-
-FastCode is released under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-## 🌟 Star History
-
-<div align="center">
-
-If FastCode saves you tokens and time, consider giving us a star! ⭐
-
-**Built with ❤️ for developers who value efficiency**
-
-</div>
-
-<div align="center">
-  <a href="https://star-history.com/#HKUDS/FastCode&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=HKUDS/FastCode&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=HKUDS/FastCode&type=Date" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=HKUDS/FastCode&type=Date" style="border-radius: 15px; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3);" />
-    </picture>
-  </a>
-</div>
-
-<p align="center">
-  <em> Thanks for visiting ✨ FastCode!</em><br><br>
-  <img src="https://visitor-badge.laobi.icu/badge?page_id=HKUDS.FastCode&style=for-the-badge&color=00d4ff" alt="Views">
-</p>
+<sub>Icons made by <a href="https://www.magnific.com" title="Magnific">Magnific</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>. Agent icons belong to their products; sources in <a href="media/agents/NOTICE.md">media/agents/NOTICE.md</a>.</sub>

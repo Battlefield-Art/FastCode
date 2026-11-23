@@ -1,0 +1,53 @@
+{
+  "name": "@tokenwise/pi",
+  "version": "0.3.0",
+  "description": "TokenWise for the pi coding agent: shrinks recognized bash output (tests, builds, diffs, searches) and its own grep/find results before the model reads them, keeping the original in the session.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "tokenwise",
+    "context",
+    "tokens"
+  ],
+  "homepage": "https://github.com/HKUDS/TokenWise/tree/main/adapters/pi#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HKUDS/TokenWise.git",
+    "directory": "adapters/pi"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "pi": {
+    "extensions": [
+      "./dist/extension.js"
+    ]
+  },
+  "exports": {
+    ".": "./dist/extension.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/extension.js",
+    "dist/evolve.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^1.1.0",
+    "@earendil-works/pi-coding-agent": "1.1.0",
+    "@earendil-works/pi-tui": "1.1.0",
+    "@tokenwise/core": "workspace:*",
+    "@tokenwise/mechanisms": "workspace:*",
+    "@tokenwise/protocol": "workspace:*",
+    "@tokenwise/store": "workspace:*"
+  }
+}

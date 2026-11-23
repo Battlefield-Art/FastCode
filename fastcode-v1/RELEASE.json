@@ -1,0 +1,14 @@
+{
+  "name": "FastCode",
+  "archive_date": "2026-11-23",
+  "source_commit": "e606d2258c79dfc59857f6a9f86779d47475ee4e",
+  "latest_release": "v1.0.1",
+  "source_file_count": 121,
+  "scope": "All Git-tracked files of the source commit.",
+  "release_adjustments": [
+    "README.md (archive notice at the top)",
+    "ARCHIVE.md",
+    "RELEASE.json",
+    "SHA256SUMS"
+  ]
+}
