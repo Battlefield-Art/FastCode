@@ -19,6 +19,8 @@ export interface EconomyEngineOptions {
    * complete text rather than a sample of it.
    */
   readonly maxProjectedChars?: number
+  /** What the host would show the model without TokenWise when not the original (its own cut, preview or compaction): journaled as `baseline`. */
+  readonly hostShown?: string
   readonly now?: () => Date
   /** Diagnostics only. Errors never reach the host's tool result. */
   readonly onError?: (error: unknown) => void
@@ -106,7 +108,7 @@ export class EconomyEngine {
     const shell = 'result' in request ? request.result : undefined
     const rendered = (native ? native.native.rendered : shell?.rendered) ?? ''
     const estimate = options.estimateTokens ?? defaultEstimate
-    const measure = (text: string): TextMeasure => ({ sha256: sha256(text), bytes: Buffer.byteLength(text, 'utf8'), tokens: estimate(text) })
+    const measure = (text: string): TextMeasure => ({ sha256: sha256(text), bytes: Buffer.byteLength(text, 'utf8'), tokens: estimate(text), chars: text.length })
     let policyHash = 'unavailable'
     let learnedRulesHash: string | null = null
     const layout = shell && typeof shell.rendered === 'string' && typeof shell.stdout?.text === 'string' ? {
@@ -120,6 +122,7 @@ export class EconomyEngine {
       command: (native ? native.command : shell?.command) ?? '', exitCode: shell !== undefined && Number.isSafeInteger(shell.exitCode) ? shell.exitCode : null,
       delivery: options.delivery, streams: options.streams, mode: options.mode, runtimeVersion: ECONOMY_RUNTIME_VERSION, policyHash,
       ...learnedRulesHash ? { learnedRulesHash } : {}, ...layout ? { layout } : {},
+      ...options.hostShown === undefined ? {} : { baseline: measure(options.hostShown) },
     })
     /** The original as evidence for `tokenwise evolve`: shell output only, when kept. */
     const evidence = (): TextMeasure & { stored: boolean } => {
@@ -172,8 +175,8 @@ export class EconomyEngine {
       } catch (error) { return this.failOpen(base(), 'artifact-save-failed', error) }
       const text = decision.text, projectedBytes = decision.projectedBytes, projectedTokens = decision.projectedTokens
       const record: EconomyRecord = { ...base(), outcome: 'projected', ...identity,
-        raw: { sha256: raw.sha256, bytes: raw.bytes, tokens: decision.rawTokens, stored: true },
-        projected: { sha256: sha256(text), bytes: projectedBytes, tokens: projectedTokens },
+        raw: { sha256: raw.sha256, bytes: raw.bytes, tokens: decision.rawTokens, chars: rendered.length, stored: true },
+        projected: { sha256: sha256(text), bytes: projectedBytes, tokens: projectedTokens, chars: text.length },
         sourceMap: map }
       return { kind: 'prepared', text, record }
     } catch (error) {

@@ -10,10 +10,11 @@
 import { spawn } from 'node:child_process'
 import type { SpawnOptionsWithStdioTuple } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { accessSync, appendFileSync, closeSync, constants, existsSync, linkSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { accessSync, appendFileSync, closeSync, constants, existsSync, linkSync, lstatSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, delimiter, join, resolve } from 'node:path'
 import { compileLearnedRules, createPolicy, parseRuleIndex, RuleDirectoryError } from '@tokenwise/core'
 import type { LearnedRuleSet, RuleFile } from '@tokenwise/core'
+import { countedOriginal } from '@tokenwise/protocol'
 import type { ArtifactPort, EconomyRecord, JournalRecord, ShadowRecallRecord } from '@tokenwise/protocol'
 import { FileArtifactStore, RuleStore, dataDirs, ensurePrivateDir, loadConfig, readJournals, readRuleDirectory, removeTree, resolveDataDir } from '@tokenwise/store'
 import { collectEvidence, commandHead, replayCase, scriptRun, verifyRules } from './evolution.ts'
@@ -180,6 +181,47 @@ export function readJson<T>(path: string): T | undefined {
   try { return JSON.parse(readFileSync(path, 'utf8')) as T } catch { return undefined }
 }
 
+const pause = (ms: number) => { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms) }
+
+/** Of these folders, the ones that may hold told state: this user's own, or not made yet (another user could make a shared fallback first). */
+function toldFolders(dirs: readonly string[]): string[] {
+  return dirs.filter(dir => {
+    try { const stat = lstatSync(dir); return stat.isDirectory() && (!process.getuid || stat.uid === process.getuid()) } catch { return true }
+  })
+}
+
+/** Whether this process can write in `dir` (probed: sandboxes refuse at write time). */
+function canWrite(dir: string): boolean {
+  const probe = join(dir, `.probe-${process.pid}-${randomBytes(4).toString('hex')}`)
+  try { writeFileSync(probe, '', { mode: 0o600 }); rmSync(probe, { force: true }); return true } catch { return false }
+}
+
+/**
+ * What a host has told the person (announced runs, switch-offs) is read from every data folder and written to the
+ * first one that takes it: with the main folder read-only, it goes to the fallback, and is not said again every turn.
+ * `fn` runs holding that folder's lock, so two agents ending a turn at once do not both say it; it gets the folder,
+ * or undefined when none can be written. A lock not freed within half a second is gone through, in a folder this
+ * process can write (best effort); one it cannot clear, or a folder it cannot write, sends it to the next folder.
+ */
+function toldUpdate<T>(dirs: readonly string[], fn: (dir: string | undefined) => T): T {
+  for (const dir of toldFolders(dirs)) {
+    const lock = join(evolveDir(dir), 'told.lock')
+    let held = false
+    for (const deadline = Date.now() + 500; ;) {
+      try { ensurePrivateDir(evolveDir(dir)); closeSync(openSync(lock, 'wx', 0o600)); held = true; break } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') break
+        // A holder that died left it: after ten seconds it is no one's. One this process cannot remove is not its to write.
+        try { if (Date.now() - statSync(lock).mtimeMs > 10_000) rmSync(lock) } catch (failure) { if ((failure as NodeJS.ErrnoException).code !== 'ENOENT') break }
+        if (Date.now() > deadline) break
+        pause(10)
+      }
+    }
+    if (!held && !canWrite(evolveDir(dir))) continue
+    try { return fn(dir) } finally { if (held) rmSync(lock, { force: true }) }
+  }
+  return fn(undefined)
+}
+
 /** Whether a process of this user with that ID exists (another user's process with a reused ID is not ours). */
 export function processAlive(pid: number): boolean {
   if (!Number.isSafeInteger(pid) || pid <= 0) return false
@@ -341,13 +383,17 @@ export function adoptedRulesInUse(dataDir: string, outcome: EvolveOutcome): read
  * or switched off since is no news: it is passed over (and marked told), and
  * one partly undone names only the rules still in use.
  */
-export function takeAnnouncement(dataDir: string, host: string, peek = false): EvolveRunStatus | undefined {
+export function takeAnnouncement(dataDir: string, host: string, peek = false, toldDirs: readonly string[] = [dataDir]): EvolveRunStatus | undefined {
   const run = readRunStatus(dataDir)
   if (!run || run.running || run.phase !== 'done' || !run.outcome) return undefined
-  const seen = readJson<Record<string, string>>(announcedFile(dataDir)) ?? {}
-  if (seen[host] === run.runId) return undefined
-  const mark = () => { try { writeJsonAtomic(announcedFile(dataDir), { ...seen, [host]: run.runId }); return true } catch { return false } }
-  let told: EvolveRunStatus = run
+  const told = () => toldFolders(toldDirs).some(dir => readJson<Record<string, string>>(announcedFile(dir))?.[host] === run.runId)
+  if (told()) return undefined
+  // Marked only by the one that finds it untold under the lock.
+  const mark = () => toldUpdate(toldDirs, dir => {
+    if (dir === undefined || told()) return false
+    try { writeJsonAtomic(announcedFile(dir), { ...readJson<Record<string, string>>(announcedFile(dir)) ?? {}, [host]: run.runId }); return true } catch { return false }
+  })
+  let said: EvolveRunStatus = run
   if (run.outcome.result === 'adopted') {
     const inUse = adoptedRulesInUse(dataDir, run.outcome)
     if (inUse.length === 0) { if (!peek) mark(); return undefined }
@@ -355,11 +401,11 @@ export function takeAnnouncement(dataDir: string, host: string, peek = false): E
     if (inUse.length < touched.length) {
       // The commands the checker found were for all of them: name the rules instead.
       const { generalization: _commands, ...rest } = run.outcome
-      told = { ...run, outcome: { ...rest, changes: { added: [...inUse], changed: [], removed: run.outcome.changes?.removed ?? [] } } }
+      said = { ...run, outcome: { ...rest, changes: { added: [...inUse], changed: [], removed: run.outcome.changes?.removed ?? [] } } }
     }
   }
-  if (peek) return told
-  return mark() ? told : undefined
+  if (peek) return said
+  return mark() ? said : undefined
 }
 
 /** What an adoption changed, for the person: "output from pytest is now shorter", or "rule x now shortens output". */
@@ -375,10 +421,10 @@ export function adoptedPhrase(outcome: EvolveOutcome): string {
  * has not told it yet and its rules are still in use, as {@link adoptedPhrase}
  * says it. Told unless `peek`; any other outcome is left for the startup notice.
  */
-export function adoptionNews(dataDir: string, host: string, peek = false): string | undefined {
-  const run = takeAnnouncement(dataDir, host, true)
+export function adoptionNews(dataDir: string, host: string, peek = false, toldDirs: readonly string[] = [dataDir]): string | undefined {
+  const run = takeAnnouncement(dataDir, host, true, toldDirs)
   if (run?.outcome?.result !== 'adopted') return undefined
-  if (!peek && !takeAnnouncement(dataDir, host)) return undefined
+  if (!peek && !takeAnnouncement(dataDir, host, false, toldDirs)) return undefined
   return adoptedPhrase(run.outcome)
 }
 
@@ -1039,7 +1085,7 @@ export function ruleUse(records: Iterable<JournalRecord>, options: { since?: str
     if (options.since && record.time < options.since) continue
     const use = entry(record.rule)
     use.projections++
-    if (record.raw && record.projected) use.savedTokens += Math.max(0, record.raw.tokens - record.projected.tokens)
+    if (record.raw && record.projected) use.savedTokens += Math.max(0, countedOriginal({ ...record, raw: record.raw }).tokens - record.projected.tokens)
     if (record.callId) byCall.set(`${record.sessionId ?? ''}\u0000${record.callId}`, record.rule)
   }
   const references = recallIndex(all)
@@ -1101,15 +1147,23 @@ const SWITCH_OFF_NEWS_MS = 7 * 86_400_000
  * last: each once, and only while it is still off (one a rollback brought
  * back is no news). Marked told unless `peek`.
  */
-export function takeSwitchedOff(dataDir: string, host: string, peek = false, now = new Date()): (SwitchedOff & { time: string })[] {
-  const told = readJson<Record<string, string>>(switchOffToldFile(dataDir)) ?? {}
-  const since = told[host] ?? new Date(now.getTime() - SWITCH_OFF_NEWS_MS).toISOString()
-  const fresh = switchedOffNow(dataDir).filter(item => item.time > since)
-  if (fresh.length === 0) return []
-  if (!peek) {
-    try { writeJsonAtomic(switchOffToldFile(dataDir), { ...told, [host]: fresh.map(item => item.time).sort().at(-1)! }) } catch { return [] }
+export function takeSwitchedOff(dataDir: string, host: string, peek = false, now = new Date(), toldDirs: readonly string[] = [dataDir]):
+  (SwitchedOff & { time: string })[] {
+  const fresh = () => {
+    const told = toldFolders(toldDirs).map(dir => readJson<Record<string, string>>(switchOffToldFile(dir))?.[host]).filter(time => typeof time === 'string').sort().at(-1)
+    const since = told ?? new Date(now.getTime() - SWITCH_OFF_NEWS_MS).toISOString()
+    return switchedOffNow(dataDir).filter(item => item.time > since)
   }
-  return fresh
+  if (peek || fresh().length === 0) return peek ? fresh() : []
+  // Taken only by the one that still finds it fresh under the lock.
+  return toldUpdate(toldDirs, dir => {
+    const items = fresh()
+    if (dir === undefined || items.length === 0) return []
+    try {
+      writeJsonAtomic(switchOffToldFile(dir), { ...readJson<Record<string, string>>(switchOffToldFile(dir)) ?? {}, [host]: items.map(item => item.time).sort().at(-1)! })
+    } catch { return [] }
+    return items
+  })
 }
 
 /** "it" for one rule switched off, "them" for more: "see it, or bring it back". */

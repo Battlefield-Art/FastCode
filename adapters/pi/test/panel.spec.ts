@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -118,7 +118,11 @@ function fakePi() {
   const handlers = new Map<string, (event: unknown, ctx: unknown) => unknown>()
   const commands = new Map<string, { handler: (args: string, ctx: unknown) => Promise<void>; getArgumentCompletions?: (prefix: string) => unknown }>()
   const api = {
-    on: (name: string, handler: (event: unknown, ctx: unknown) => unknown) => { handlers.set(name, handler) },
+    // pi calls every handler of an event, in the order registered.
+    on: (name: string, handler: (event: unknown, ctx: unknown) => unknown) => {
+      const before = handlers.get(name)
+      handlers.set(name, before ? async (event, ctx) => { await before(event, ctx); return handler(event, ctx) } : handler)
+    },
     registerCommand: (name: string, command: never) => { commands.set(name, command) },
     registerFlag: () => {}, getFlag: () => '', registerTool: () => {}, getActiveTools: () => [], setActiveTools: () => {},
   }
@@ -185,6 +189,27 @@ JS
     expect(new RuleStore(home).state().active).toMatch(/^[a-f0-9]{64}$/)
     await pi.handlers.get('session_shutdown')!({}, pi.ctx)
   }, 60_000)
+})
+
+describe('the footer at startup', () => {
+  it('follows the scan it starts, instead of showing the old one for 15 s', async () => {
+    const home = temp()
+    // An hour-old scan said "ready to learn"; nothing recorded supports that now.
+    mkdirSync(join(home, 'evolve'), { recursive: true })
+    writeFileSync(join(home, 'evolve', 'scan.json'), JSON.stringify({ schemaVersion: 1, time: new Date(Date.now() - 3_600_000).toISOString(),
+      evidence: 3, newEvidence: 3, leftTokens: 9000, opportunities: [{ command: './build.sh', cases: 3, leftTokens: 9000 }], ready: true, rules: [], disabled: [] }))
+    const pi = fakePi()
+    createTokenWiseExtension({ dataDir: home, env: { ...process.env, TOKENWISE_HOME: home },
+      runner: fileURLToPath(new URL('../../../packages/mechanisms/test/fixtures/runner.ts', import.meta.url)), runnerNodeArgs: ['--conditions=source'] })(pi.api as never)
+    await pi.handlers.get('session_start')!({}, pi.ctx)
+    expect(pi.statuses.at(-1), JSON.stringify(pi.statuses)).toContain('ready to learn')
+    const deadline = Date.now() + 10_000
+    while (pi.statuses.at(-1) !== undefined) {
+      if (Date.now() > deadline) throw new Error(`footer still ${JSON.stringify(pi.statuses.at(-1))}`)
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+    await pi.handlers.get('session_shutdown')!({}, pi.ctx)
+  }, 20_000)
 })
 
 describe('what a pi conversation saved', () => {

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -46,6 +46,27 @@ const failingPytest = [
   '=========================== short test summary info ============================',
   "FAILED tests/test_versions.py::test_version_ordering - AssertionError: assert '1.10.0' > '1.9.0'",
   '========================= 1 failed, 150 passed in 0.12s =========================', '',
+].join('\n')
+
+/**
+ * `pytest -v` over 826 tests (65 KB, as a real run printed it), more than Grok or Copilot keep inline. Failing: one
+ * test fails, with `failureLines` lines of assertion detail.
+ */
+const bigPytest = (failing: boolean, failureLines = 2) => [
+  '============================= test session starts ==============================',
+  'platform darwin -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- /opt/homebrew/bin/python3', 'cachedir: .pytest_cache', 'rootdir: /w',
+  'plugins: anyio-4.12.1, asyncio-1.3.0', 'collecting ... collected 826 items', '',
+  ...Array.from({ length: 826 }, (_, i) => `tests/test_history.py::test_history_day_is_reconciled[${i + 1}] ${failing && i === 776 ? 'FAILED' : 'PASSED'}`
+    + `${' '.repeat(i + 1 < 10 ? 10 : i + 1 < 100 ? 9 : 8)}[${String(Math.floor((i + 1) * 100 / 826)).padStart(3)}%]`),
+  ...failing ? ['', '=================================== FAILURES ===================================',
+    '_____________________ test_history_day_is_reconciled[777] _____________________', '', 'day = 777', '',
+    '    def test_history_day_is_reconciled(day):', '>       assert day != 777, f"day {day}: balance 1498 != amount 749"',
+    ...Array.from({ length: failureLines }, (_, i) => `E       AssertionError: day 777: balance 1498 != amount 749 (posting ${i})`), '',
+    'tests/test_history.py:5: AssertionError', '=========================== short test summary info ============================',
+    'FAILED tests/test_history.py::test_history_day_is_reconciled[777] - AssertionError: day 777: balance 1498 != amount 749',
+    '======================== 1 failed, 825 passed in 0.71s ========================='] : ['',
+    '============================= 826 passed in 0.30s =============================='],
+  '',
 ].join('\n')
 
 const records = (home: string, host: string) => readdirSync(join(home, 'journal', host))
@@ -224,15 +245,89 @@ describe('Grok hook', () => {
     const env = { TOKENWISE_HOME: home }
     const base = event('grep -rn value src', output, 0, { cwd })
     const result = base.toolResult
-    // Cut by Grok: recorded as passed, never projected.
+    // Cut, without the header naming Grok's log of the whole output: recorded as passed, never projected.
     expect(grokHook({ ...base, toolResult: { ...result, truncated: true } }, env)).toBeUndefined()
-    // Over 128 KiB Grok sends the model-facing text as a string.
+    // Over 128 KiB Grok sends the model-facing text as a string; without the header, there is no log to read.
     expect(grokHook({ ...base, toolResult: `exit: 0\n${output}` }, env)).toBeUndefined()
     expect(grokHook({ ...base, toolResult: { ...result, output_for_prompt: `exit: 0\n[shortened]` } }, env)).toBeUndefined()
     expect(grokHook({ ...base, toolResult: { ...result, output: [0xff, 0xfe], output_for_prompt: 'exit: 0\n�' } }, env)).toBeUndefined()
     expect(grokHook({ ...base, isBackgrounded: true }, env)).toBeUndefined()
     expect(grokHook({ ...base, tool_name: 'read_file' }, env)).toBeUndefined()
     expect(records(home, 'grok')).toMatchObject([{ outcome: 'passed', reason: 'already-truncated' }])
+  })
+
+  // A result Grok 1.0.92 cut (over 20 KB): the model reads the first and last 10 KB; Grok's log under the session holds all of it.
+  const cutEvent = (session: string, whole: string, exitCode: number, options: { log?: string; string?: boolean } = {}) => {
+    const callId = 'call-b6793445-68c1-439e-a216-ed83f3f3e510-0'
+    const log = options.log ?? join(session, 'terminal', `${callId}.log`)
+    const shown = `${whole.slice(0, 10_000)}\n\n... (output truncated) ...\n\n${whole.slice(-10_000)}`
+    const prompt = `exit: ${exitCode} [truncated: showing first/last 19.6 KB of ${(whole.length / 1024).toFixed(1)} KB - full output at: ${log}]\n${shown}`
+    const toolResult = options.string ? prompt : { type: 'Bash', command: 'python3 -m pytest -v tests', current_dir: '/w', description: 'Run the tests',
+      exit_code: exitCode, output: [...Buffer.from(shown)], output_file: log, output_for_prompt: prompt, signal: null, timed_out: false,
+      total_bytes: Buffer.byteLength(whole), truncated: true }
+    return { shown, event: { hook_event_name: 'PostToolUse', session_id: '01a208d3-1d47-7403-bfd5-1f51d1d884f9', cwd: '/w', tool_name: 'run_terminal_command',
+      tool_use_id: callId, tool_input: { command: 'python3 -m pytest -v tests' }, toolResult, tool_response: toolResult, isBackgrounded: false,
+      transcript_path: join(session, 'updates.jsonl'), ...options.string ? { toolResultTruncated: true } : {} } }
+  }
+  const grokSession = (whole: string) => {
+    const session = temp()
+    mkdirSync(join(session, 'terminal'))
+    writeFileSync(join(session, 'terminal', 'call-b6793445-68c1-439e-a216-ed83f3f3e510-0.log'), whole)
+    return session
+  }
+
+  it('filters a result Grok cut from its log of the whole output, when that is shorter than what Grok shows', () => {
+    const home = temp()
+    const env = { TOKENWISE_HOME: home }
+    const whole = bigPytest(true)
+    const session = grokSession(whole)
+    for (const string of [false, true]) {
+      const { shown, event } = cutEvent(session, whole, 1, { string })
+      const text = JSON.parse(grokHook(event, env)!).hookSpecificOutput.updatedToolOutput as string
+      expect(text.startsWith('exit: 1\n')).toBe(true)
+      // The failure Grok's cut kept only half of is whole again.
+      expect(text).toContain('E       AssertionError: day 777: balance 1498 != amount 749 (posting 1)')
+      expect(text).toContain('1 failed, 825 passed')
+      expect(text).not.toContain('(output truncated)')
+      expect(text.length).toBeLessThan(shown.length / 10)
+    }
+    const journaled = records(home, 'grok')
+    expect(journaled).toMatchObject([{ outcome: 'projected', filter: 'pytest', exitCode: 1 }, { outcome: 'projected', filter: 'pytest', exitCode: 1 }])
+    expect(journaled[0].truncated).toBeUndefined()
+    expect(new FileArtifactStore(home).read(journaled[0].raw.sha256)).toBe(whole)
+    // Savings count from Grok's cut, which the model would have read instead.
+    expect(journaled[0].baseline.bytes).toBeLessThan(25_000)
+    expect(journaled[0].baseline.bytes).toBeGreaterThan(19_000)
+    // A log that is not UTF-8 is not what the model reads: left alone.
+    const binary = Buffer.concat([Buffer.from(whole.slice(0, 30_000)), Buffer.from([0xff]), Buffer.from(whole.slice(30_000))])
+    const odd = grokSession('')
+    writeFileSync(join(odd, 'terminal', 'call-b6793445-68c1-439e-a216-ed83f3f3e510-0.log'), binary)
+    expect(grokHook(cutEvent(odd, whole, 1).event, env)).toBeUndefined()
+    // A passing run keeps its summary.
+    const passing = bigPytest(false)
+    const text = JSON.parse(grokHook(cutEvent(grokSession(passing), passing, 0).event, env)!).hookSpecificOutput.updatedToolOutput as string
+    expect(text).toContain('826 passed in 0.30s')
+  })
+
+  it('leaves a cut result alone without this call\'s log holding what Grok showed, or when the projection is not shorter', () => {
+    const home = temp()
+    const env = { TOKENWISE_HOME: home }
+    const whole = bigPytest(true)
+    const session = grokSession(whole)
+    // Another call's log, a file elsewhere, a log that is not this output, and no log at all.
+    const other = join(session, 'terminal', 'call-0f0e0d0c-68c1-439e-a216-ed83f3f3e510-0.log')
+    writeFileSync(other, whole)
+    const elsewhere = join(temp(), 'out.log')
+    writeFileSync(elsewhere, whole)
+    expect(grokHook(cutEvent(session, whole, 1, { log: other }).event, env)).toBeUndefined()
+    expect(grokHook(cutEvent(session, whole, 1, { log: elsewhere }).event, env)).toBeUndefined()
+    expect(grokHook(cutEvent(grokSession(whole.replace('[700] PASSED', '[700] FAILED')), whole.replace('[1] PASSED', '[1] FAILED'), 1).event, env)).toBeUndefined()
+    expect(grokHook(cutEvent(temp(), whole, 1).event, env)).toBeUndefined()
+    expect(existsSync(join(home, 'journal'))).toBe(false)
+    // All 2,000 lines of the failure are what matters: longer than the 20 KB Grok shows, so Grok's cut stays.
+    const long = bigPytest(true, 2000)
+    expect(grokHook(cutEvent(grokSession(long), long, 1).event, env)).toBeUndefined()
+    expect(records(home, 'grok')).toMatchObject([{ outcome: 'passed', reason: 'over-host-inline-limit', filter: 'pytest' }])
   })
 })
 
@@ -290,9 +385,78 @@ describe('GitHub Copilot CLI hook', () => {
     }
   })
 
-  it('leaves output Copilot saved to a file, other tools and still-running shells alone', () => {
-    const env = withLc(temp())
+  // Output over about 20 KB, as Copilot 1.0.107 shows it: the file it saved, advice, and the first 500 characters.
+  const savedFile = '1795444648382-copilot-tool-output-17987-c72b061f-b34a-4ab9-82c1-375713730483.txt'
+  const savedText = (path: string, whole: string, exitCode: number, shellId = '0') => `Output too large to read at once (${(whole.length / 1024).toFixed(1)} KB). Saved to: ${path}\n`
+    + 'Consider using tools like grep (for searching), head/tail (for viewing start/end), view with view_range (for specific sections), or jq (for JSON) to examine portions of the output.\n\n'
+    + `Preview (first 500 chars):\n${whole.slice(0, 500)}\n<shellId: ${shellId} completed with exit code ${exitCode}>`
+
+  it('filters output Copilot saved to a file from that file, when the projection fits inline', () => {
+    const home = temp()
+    const tmp = temp()
+    const whole = bigPytest(true)
+    writeFileSync(join(tmp, savedFile), whole)
+    const env = { ...withLc(home), TMPDIR: tmp }
+    const text = JSON.parse(copilotHook(event('python3 -m pytest -v tests', savedText(join(tmp, savedFile), whole, 1)), env)!).modifiedResult.textResultForLlm as string
+    expect(text).toContain('E       AssertionError: day 777: balance 1498 != amount 749 (posting 1)')
+    expect(text).toContain('1 failed, 825 passed')
+    expect(text).not.toContain('Output too large')
+    expect(text.endsWith('\n<shellId: 0 completed with exit code 1>')).toBe(true)
+    expect(text.length).toBeLessThan(3000)
+    const journaled = records(home, 'copilot')
+    expect(journaled).toMatchObject([{ outcome: 'projected', filter: 'pytest', command: 'python3 -m pytest -v tests', exitCode: 1 }])
+    // Savings count from what Copilot showed instead (its advice and the preview), not from the whole file.
+    expect(journaled[0].baseline.bytes).toBeLessThan(1200)
+    expect(journaled[0].raw.chars).toBe(whole.length - 1)
+    // Without its last newline, as Copilot's own results end before the status line.
+    expect(new FileArtifactStore(home).read(journaled[0].raw.sha256)).toBe(whole.slice(0, -1))
+  })
+
+  it('leaves saved output alone unless the file is Copilot\'s, in the temporary folder, and starts with the preview; or when the projection is too long', () => {
+    const home = temp()
+    const tmp = temp()
+    const whole = bigPytest(true)
+    const elsewhere = temp()
+    writeFileSync(join(elsewhere, savedFile), whole)
+    writeFileSync(join(tmp, 'notes.txt'), whole)
+    const other = '1795444648382-copilot-tool-output-17987-0f0e0d0c-b34a-4ab9-82c1-375713730483.txt'
+    writeFileSync(join(tmp, other), whole.replace('platform darwin', 'platform linux'))
+    const env = { ...withLc(home), TMPDIR: tmp }
+    for (const path of [join(elsewhere, savedFile), join(tmp, 'notes.txt'), join(tmp, other), join(tmp, savedFile)]) {
+      expect(copilotHook(event('python3 -m pytest -v tests', savedText(path, whole, 1)), env), path).toBeUndefined()
+    }
     expect(copilotHook(event('seq 1 200000', `Output too large to read at once (1.2 MB). Saved to: /tmp/x.txt\n${failingPytest}${status}`), env)).toBeUndefined()
+    // A command printing such a header itself: a short preview matches the start of any file; an old file is some other output.
+    writeFileSync(join(tmp, savedFile), whole)
+    const short = savedText(join(tmp, savedFile), whole, 1).replace(`Preview (first 500 chars):\n${whole.slice(0, 500)}`, `Preview (first 500 chars):\n${whole.slice(0, 1)}`)
+    expect(copilotHook(event('cat notes', short), env)).toBeUndefined()
+    utimesSync(join(tmp, savedFile), new Date(Date.now() - 20 * 60_000), new Date(Date.now() - 20 * 60_000))
+    expect(copilotHook(event('python3 -m pytest -v tests', savedText(join(tmp, savedFile), whole, 1)), env)).toBeUndefined()
+    rmSync(join(tmp, savedFile))
+    expect(existsSync(join(home, 'journal'))).toBe(false)
+    // All 2,000 lines of the failure are what matters, over what Copilot keeps inline: its preview stays.
+    const long = bigPytest(true, 2000)
+    writeFileSync(join(tmp, savedFile), long)
+    expect(copilotHook(event('python3 -m pytest -v tests', savedText(join(tmp, savedFile), long, 1)), env)).toBeUndefined()
+    expect(records(home, 'copilot')).toMatchObject([{ outcome: 'passed', reason: 'over-host-inline-limit', filter: 'pytest' }])
+  })
+
+  it('filters a read_bash of a background shell whose output Copilot saved to a file', () => {
+    const home = temp()
+    const tmp = temp()
+    const whole = bigPytest(true)
+    writeFileSync(join(tmp, savedFile), whole)
+    const env = { ...withLc(home), TMPDIR: tmp }
+    const call = (tool: string, args: Record<string, unknown>, text: string) => event('', text, { toolName: tool, toolArgs: args, toolCallId: 'call_m6mg' })
+    expect(copilotHook(call('bash', { command: 'python3 -m pytest -v tests', mode: 'async' }, '<command started in background with shellId: 2>'), env)).toBeUndefined()
+    const text = JSON.parse(copilotHook(call('read_bash', { shellId: '2', delay: 30 }, savedText(join(tmp, savedFile), whole, 1, '2')), env)!).modifiedResult.textResultForLlm as string
+    expect(text).toContain('E       AssertionError: day 777: balance 1498 != amount 749 (posting 1)')
+    expect(text.endsWith('\n<shellId: 2 completed with exit code 1>')).toBe(true)
+    expect(records(home, 'copilot')).toMatchObject([{ tool: 'read_bash', command: 'python3 -m pytest -v tests', outcome: 'projected', filter: 'pytest' }])
+  })
+
+  it('leaves other tools and still-running shells alone', () => {
+    const env = withLc(temp())
     expect(copilotHook(event('pytest -v', failingPytest + status, { toolName: 'view' }), env)).toBeUndefined()
     expect(copilotHook(event('pytest -v', `${failingPytest}\n<shellId: 3 is still running>`), env)).toBeUndefined()
   })

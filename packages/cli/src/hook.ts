@@ -3,6 +3,7 @@ import { homedir, tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { mayProject, nativeJsonGrepRows, nativeJsonPaths } from '@tokenwise/core'
 import type { NativeResult } from '@tokenwise/core'
+import { HOST_PROFILES } from '@tokenwise/protocol'
 import { backgroundCommand, describeToolCall, normalizeShellCommand, rememberBackground } from '@tokenwise/mechanisms'
 import { claudeAfterCompact, claudeAllowRecall, claudePreCompact } from './claude-shadow.ts'
 import { codexAfterCompact } from './codex-shadow.ts'
@@ -507,10 +508,16 @@ export function grokHook(input: HookInput, env: NodeJS.ProcessEnv = process.env)
   }
   if (input.hook_event_name !== 'PostToolUse' || input.tool_name !== 'run_terminal_command' || input.isBackgrounded === true) return undefined
   const result = (input.toolResult ?? input.tool_response) as GrokShellResult | string | null | undefined
-  // Results over 128 KiB arrive as their model-facing text, already cut to Grok's limits: left alone.
+  // Results over 128 KiB arrive as their model-facing text, already cut: filtered from Grok's log of the whole output.
+  // That form says nothing of a timeout or signal: an exit code a signal gives (or none Grok could get) reads as stopped.
+  if (typeof result === 'string') return grokCut(input, input.tool_input?.command, result, undefined, env)
   if (!result || typeof result !== 'object' || result.type !== 'Bash' || result.pre_formatted) return undefined
   const command = typeof result.command === 'string' ? result.command : input.tool_input?.command
   const exitCode = result.exit_code
+  const interrupted = result.timed_out === true || (result.signal !== null && result.signal !== undefined)
+  if (result.truncated === true && typeof result.output_for_prompt === 'string' && GROK_CUT.test(result.output_for_prompt)) {
+    return grokCut(input, command, result.output_for_prompt, interrupted, env)
+  }
   if (typeof command !== 'string' || typeof exitCode !== 'number' || !Number.isSafeInteger(exitCode) || !Array.isArray(result.output)) return undefined
   let output: string
   try { output = utf8.decode(Uint8Array.from(result.output as number[])) } catch { return undefined }
@@ -522,10 +529,63 @@ export function grokHook(input: HookInput, env: NodeJS.ProcessEnv = process.env)
   if (shown === undefined) return undefined
   // No mayProject gate after the fact: the output is here, and a learned rule or the evidence for one may need any command.
   const projected = projectOutput({ host: 'grok', delivery: 'result-hook', tool: 'run_terminal_command', sessionId: text(input.session_id),
-    callId: text(input.tool_use_id), command, exitCode, interrupted: result.timed_out === true || (result.signal !== null && result.signal !== undefined),
+    callId: text(input.tool_use_id), command, exitCode, interrupted,
     truncated: result.truncated === true, stdout: shown, ...typeof input.cwd === 'string' ? { cwd: input.cwd } : {}, env })
   if (!projected) return undefined
   return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', updatedToolOutput: status + projected.stdout } })
+}
+
+/**
+ * The first line of a shell result Grok cut (Grok 1.0.92, over 20 KB): `exit: 1 [truncated: showing first/last 19.6 KB
+ * of 65.1 KB - full output at: <log>]`. The model reads the first and last 10 KB (more of the end over 128 KiB).
+ */
+const GROK_CUT = /^exit: (-?\d+) \[truncated: showing first\/last [^\]\n]* of [^\]\n]* - full output at: ([^\n]+)\]\n/u
+/** Where Grok joins the start and the end it kept. */
+const GROK_CUT_GAP = '\n\n... (output truncated) ...\n\n'
+
+/**
+ * A shell result Grok cut: the whole output, from the log Grok wrote of it, is filtered, and the projection replaces
+ * the cut text when it is shorter (the model then reads all of the output that matters instead of its two ends).
+ * The log must be this call's own (`<session>/terminal/<tool_use_id>.log`) and hold the very start and end the model
+ * was shown; anything else is left alone.
+ */
+function grokCut(input: HookInput, command: unknown, prompt: string, interrupted: boolean | undefined, env: NodeJS.ProcessEnv): string | undefined {
+  const cut = GROK_CUT.exec(prompt)
+  if (!cut || typeof command !== 'string') return undefined
+  const shown = prompt.slice(cut[0].length)
+  const whole = grokLog(input, cut[2]!, shown)
+  if (whole === undefined) return undefined
+  const exitCode = Number(cut[1])
+  const stopped = interrupted ?? (exitCode < 0 || exitCode >= 128)
+  const projected = projectOutput({ host: 'grok', delivery: 'result-hook', tool: 'run_terminal_command', sessionId: text(input.session_id),
+    callId: text(input.tool_use_id), command, exitCode, interrupted: stopped, stdout: whole, maxProjectedChars: shown.length - 1, hostShown: prompt,
+    ...typeof input.cwd === 'string' ? { cwd: input.cwd } : {}, env })
+  if (!projected) return undefined
+  return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', updatedToolOutput: `exit: ${exitCode}\n${projected.stdout}` } })
+}
+
+/** The whole output of a cut Grok result, from its log; undefined unless the log is this call's and matches what was shown. */
+function grokLog(input: HookInput, named: string, shown: string): string | undefined {
+  const callId = text(input.tool_use_id)
+  if (typeof input.transcript_path !== 'string' || callId === null || !/^call-[\w-]+$/u.test(callId)) return undefined
+  const log = join(dirname(input.transcript_path), 'terminal', `${callId}.log`)
+  if (resolve(named) !== resolve(log)) return undefined
+  const gap = shown.indexOf(GROK_CUT_GAP)
+  if (gap < 0) return undefined
+  // A character the cut split shows as U+FFFD at either side of the gap.
+  const start = shown.slice(0, gap).replace(/�+$/u, ''), end = shown.slice(gap + GROK_CUT_GAP.length).replace(/^�+/u, '')
+  let whole: string
+  try {
+    const stat = lstatSync(log)
+    if (!stat.isFile() || (process.getuid && stat.uid !== process.getuid()) || stat.size > 32 * 1024 * 1024) return undefined
+    // Output that is not UTF-8 is not the text the model reads: left alone, as uncut output is.
+    whole = utf8.decode(readFileSync(log))
+  } catch { return undefined }
+  // The model's copy has no carriage returns (see grokHook); the log keeps them.
+  for (const candidate of [whole, whole.replace(/\r/gu, '')]) {
+    if (candidate.length > shown.length && candidate.startsWith(start) && candidate.endsWith(end)) return candidate
+  }
+  return undefined
 }
 
 /** A background command's result in a `get_command_or_subagent_output` read (Grok 1.0.77, `TaskOutputResult`). */
@@ -608,24 +668,49 @@ function grokStillInContext(rows: NonNullable<ReturnType<typeof grokHistory>>, e
 
 /** Copilot CLI ends a bash result with its own status line (seen on 1.0.103). */
 const COPILOT_STATUS = /\n?<shellId: [^>\n]* completed with exit code (-?\d+)>\s*$/u
-/** Copilot saves output too large for the model to a file and shows a preview instead. */
+/**
+ * Copilot saves output too large for the model (over about 20 KB) to a file and shows the start instead (1.0.107):
+ * `Output too large to read at once (65.1 KB). Saved to: <TMPDIR>/<ms>-copilot-tool-output-<pid>-<uuid>.txt`, a
+ * line of advice, and `Preview (first 500 chars):` with the file's first 500 characters.
+ */
 const COPILOT_SAVED = 'Output too large to read at once'
+const COPILOT_SAVED_AT = /^Output too large to read at once \([^)\n]*\)\. Saved to: ([^\n]+)\n/u
+const COPILOT_SAVED_FILE = /^\d+-copilot-tool-output-\d+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.txt$/u
+const COPILOT_PREVIEW = '\nPreview (first 500 chars):\n'
+const COPILOT_PREVIEW_CHARS = 500
+/** The longest projection of saved output that replaces it: under what Copilot keeps inline (19.4 KB seen inline, 23.1 KB saved). */
+const COPILOT_INLINE_CHARS = HOST_PROFILES.copilot!.inlineBytes!
 /** Copilot 1.0.103 shortens some output itself, and keeps the original in a file it names. */
 const COPILOT_COMPACTED = /^Shell output was automatically compacted\. Compacted output below\. Original at ([^\n;]+); only use if exact omitted lines are needed\.\n/u
 const COPILOT_ORIGINAL = /^original-output-\d+-[0-9a-f]{32}\.txt$/u
 
 /**
- * The original Copilot kept, read only from a file of Copilot's naming in this
- * user's temporary folder (a command could print that header itself).
+ * A file Copilot wrote of a command's output, read only when it has Copilot's naming and lies in this user's
+ * temporary folder (a command could print the header that names it itself).
  */
-function copilotOriginal(path: string, env: NodeJS.ProcessEnv): string | undefined {
+function copilotFile(path: string, name: RegExp, env: NodeJS.ProcessEnv): string | undefined {
   try {
     const folders = new Set([resolve(tmpdir()), ...env.TMPDIR ? [resolve(env.TMPDIR)] : []])
-    if (!COPILOT_ORIGINAL.test(basename(path)) || !folders.has(resolve(dirname(path)))) return undefined
-    const stat = lstatSync(path)
+    // The path as resolved is the one checked and the one read (`link/..` in it must not lead elsewhere).
+    const file = resolve(path)
+    if (!name.test(basename(file)) || !folders.has(dirname(file))) return undefined
+    const stat = lstatSync(file)
     if (!stat.isFile() || (process.getuid && stat.uid !== process.getuid()) || stat.size > 32 * 1024 * 1024) return undefined
-    return readFileSync(path, 'utf8').replace(/\n$/u, '')
+    // Copilot writes it as the command ends: an older one is some other output (a command can print the header).
+    if (Date.now() - stat.mtimeMs > 10 * 60_000) return undefined
+    return utf8.decode(readFileSync(file)).replace(/\n$/u, '')
   } catch { return undefined }
+}
+
+/** The whole of output Copilot saved to a file (`shown` is its text before the status line), when the file starts with the preview. */
+function copilotSaved(shown: string, env: NodeJS.ProcessEnv): string | undefined {
+  const saved = COPILOT_SAVED_AT.exec(shown)
+  const at = saved ? shown.indexOf(COPILOT_PREVIEW, saved[0].length - 1) : -1
+  if (!saved || at < 0) return undefined
+  const preview = shown.slice(at + COPILOT_PREVIEW.length)
+  const whole = copilotFile(saved[1]!.trim(), COPILOT_SAVED_FILE, env)
+  // All of the preview Copilot shows, its first 500 characters: a short one could match the start of any file.
+  return whole !== undefined && whole.length > COPILOT_PREVIEW_CHARS && preview === whole.slice(0, COPILOT_PREVIEW_CHARS) ? whole : undefined
 }
 
 /**
@@ -661,7 +746,7 @@ export function copilotHook(input: HookInput, env: NodeJS.ProcessEnv = process.e
   }
   const command = args?.command
   const output = result.textResultForLlm
-  if (typeof command !== 'string' || output.startsWith(COPILOT_SAVED)) return undefined
+  if (typeof command !== 'string') return undefined
   const status = COPILOT_STATUS.exec(output)
   // Started in the background, or still running when bash returned: its output comes later, through read_bash.
   if (!status) { copilotRememberShell(input, command, output, env); return undefined }
@@ -673,14 +758,20 @@ export function copilotHook(input: HookInput, env: NodeJS.ProcessEnv = process.e
 /**
  * A finished Copilot command's output (what Copilot shows before its status line), projected. Output Copilot
  * shortened itself: TokenWise works on the original it kept, and its projection replaces Copilot's only when shorter.
+ * Output Copilot saved to a file: TokenWise works on that file, and its projection replaces the preview when Copilot
+ * would have kept it inline (the model then reads what matters at once instead of searching the file).
  */
 function copilotProject(input: HookInput, tool: string, command: string, exitCode: number, shown: string, cwd: unknown, env: NodeJS.ProcessEnv): string | undefined {
   const compacted = COPILOT_COMPACTED.exec(shown)
-  const original = compacted ? copilotOriginal(compacted[1]!.trim(), env) : undefined
-  if (compacted && original === undefined) return undefined
+  const saved = shown.startsWith(COPILOT_SAVED)
+  const original = compacted ? copilotFile(compacted[1]!.trim(), COPILOT_ORIGINAL, env) : saved ? copilotSaved(shown, env) : undefined
+  if ((compacted || saved) && original === undefined) return undefined
+  const limit = compacted ? shown.length - 1 : saved ? COPILOT_INLINE_CHARS : undefined
   const projected = projectOutput({ host: 'copilot', delivery: 'result-hook', tool, sessionId: text(input.sessionId), callId: tool === 'bash' ? null : text(input.toolCallId),
     command, exitCode, interrupted: false, truncated: false, stdout: original ?? shown,
-    ...compacted ? { maxProjectedChars: shown.length - 1 } : {}, ...typeof cwd === 'string' ? { cwd } : {}, env })
+    // What Copilot shows instead of the original (its compaction, or the preview of the file) is what savings count from.
+    ...compacted || saved ? { hostShown: shown } : {},
+    ...limit === undefined ? {} : { maxProjectedChars: limit }, ...typeof cwd === 'string' ? { cwd } : {}, env })
   return projected?.stdout
 }
 
@@ -701,15 +792,15 @@ function copilotRememberShell(input: HookInput, command: string, output: string,
 /**
  * Copilot's read_bash of a shell whose command finished: the read holds the command's whole output (from its start)
  * and the status line with its exit code. That output is filtered as the command's (remembered when bash started
- * it); the status line, and a detached shell's `Output:` lead, stay. A shell still running, stopped, saved to a file,
- * read again after its output was read, or started outside this conversation, is left alone. Output Copilot
- * compacted itself is handled as for bash.
+ * it); the status line, and a detached shell's `Output:` lead, stay. A shell still running, stopped, read again
+ * after its output was read, or started outside this conversation, is left alone. Output Copilot compacted itself
+ * or saved to a file is handled as for bash.
  */
 function copilotReadBash(input: HookInput, output: string, env: NodeJS.ProcessEnv): string | undefined {
   const sessionId = text(input.sessionId)
   const end = COPILOT_READ_END.exec(output)
   const shellId = (input.toolArgs as { shellId?: unknown } | null | undefined)?.shellId
-  if (!sessionId || !end || end[2] !== shellId || output.startsWith(COPILOT_SAVED)) return undefined
+  if (!sessionId || !end || end[2] !== shellId) return undefined
   const lead = end[1] ? 'Output:\n' : ''
   if (!output.startsWith(lead)) return undefined
   const shown = output.slice(lead.length, end.index)

@@ -116,19 +116,19 @@ export function learnCancel(): number {
 export function startupNotice(host: string, env: NodeJS.ProcessEnv = process.env, options: { peek?: boolean } = {}): string | undefined {
   // A learner's own session (and a disabled TokenWise) says nothing.
   if (env.TOKENWISE_DISABLE === '1') return undefined
-  const { dataDir } = cliContext({ env })
+  const { dataDir, dataDirs } = cliContext({ env })
   try { refreshScan(dataDir, { ...runner(), env }) } catch { /* The notice uses the last scan. */ }
   const skill = SKILL_COMMAND[host] ?? 'the tokenwise skill'
   // A peek leaves the notice to be told (a host that is not sure it can show it asks again once it has).
   const peek = options.peek === true
-  const done = takeAnnouncement(dataDir, host, peek)
+  const done = takeAnnouncement(dataDir, host, peek, dataDirs)
   if (done?.outcome?.result === 'adopted') {
     // The commands it now shortens better, as the checker found them; else the rules (an adoption since undone is not announced).
     return `TokenWise learned something about your project: ${adoptedPhrase(done.outcome)} for every agent. See the before and after with ${skill}.`
   }
   if (done?.outcome) return `TokenWise learning: ${outcomeSentence(done.outcome)}.`
   // A learned rule the monitor switched off: the person was told it saves tokens, so they hear that it stopped.
-  const off = takeSwitchedOff(dataDir, host, peek)
+  const off = takeSwitchedOff(dataDir, host, peek, undefined, dataDirs)
   const it = switchedOffPronoun(off)
   if (off.length) return `TokenWise switched off ${switchedOffPhrase(off)}. See ${it}, or bring ${it} back, with ${skill}.`
   const ready = takeReadyNotice(dataDir, host, peek)

@@ -18,8 +18,13 @@ Verified against Copilot CLI 1.0.103 in `copilot -p`:
   folder), records it, and replaces Copilot's version only when its own
   projection is shorter. On a failing `pytest -v` with 151 tests, the model
   read 1,108 bytes instead of Copilot's 1,227 (13,191 originally).
-- Output Copilot saved to a file because it was too large and other tools
-  pass through. A shell that goes on running (`mode: async`, detached, or
+- Output over about 20 KB, which Copilot saves to a file and shows only the
+  first 500 characters of: TokenWise filters the whole output from that file
+  (only a file of Copilot's naming in your temporary folder, starting with
+  that preview), and when the projection fits inline the model reads it
+  instead of the preview and does not have to search the file. Verified on
+  Copilot 1.0.107 with a 65 KB passing and a 160 KB failing `pytest -v`.
+- Other tools pass through. A shell that goes on running (`mode: async`, detached, or
   still running after its wait) is remembered; its output is filtered when the
   model's `read_bash` finds the command finished, the read holding its whole
   output and the status line `<shellId: X completed with exit code N>`.

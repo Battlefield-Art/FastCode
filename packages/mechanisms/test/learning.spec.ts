@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
+import { execFile } from 'node:child_process'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -141,6 +142,41 @@ describe('learned rules in use', () => {
       .toBe('rules a, b, since the agent kept asking for the output they removed')
     expect(switchedOffPronoun([{ id: 'a', reason: 'x', recalls: 1, uses: 2 }, { id: 'b', reason: 'y', recalls: 1, uses: 2 }])).toBe('them')
   })
+
+  it('keeps what it told in the fallback folder when the main one is read-only, so it is said once', () => {
+    const home = temp(), fallback = temp()
+    const store = new RuleStore(home)
+    store.activate(store.installFiles(ruleFiles(['noisy', 'quiet'])))
+    expect(reviewActiveRules(home, new Map([['noisy', { id: 'noisy', projections: 7, savedTokens: 900, originalRecalls: 3 }]]))).toHaveLength(1)
+    mkdirSync(join(home, 'evolve'), { recursive: true })
+    // A crashed process left its lock behind, which this one cannot clear.
+    writeFileSync(join(home, 'evolve', 'told.lock'), '')
+    utimesSync(join(home, 'evolve', 'told.lock'), new Date(Date.now() - 60_000), new Date(Date.now() - 60_000))
+    chmodSync(join(home, 'evolve'), 0o555)
+    try {
+      const dirs = [home, fallback]
+      const started = Date.now()
+      expect(takeSwitchedOff(home, 'codex', false, undefined, dirs).map(item => item.id)).toEqual(['noisy'])
+      expect(Date.now() - started).toBeLessThan(400)
+      expect(existsSync(join(fallback, 'evolve', 'switched-off-told.json'))).toBe(true)
+      expect(takeSwitchedOff(home, 'codex', true, undefined, dirs)).toEqual([])
+      expect(takeSwitchedOff(home, 'codex', false, undefined, dirs)).toEqual([])
+      // Without the fallback it could not be kept, so it is not said (rather than said every turn).
+      expect(takeSwitchedOff(home, 'grok', false, undefined, [home])).toEqual([])
+    } finally { chmodSync(join(home, 'evolve'), 0o700) }
+  })
+
+  it('lets one of several agents ending a turn at once say a switch-off', async () => {
+    const home = temp()
+    const store = new RuleStore(home)
+    store.activate(store.installFiles(ruleFiles(['noisy', 'quiet'])))
+    expect(reviewActiveRules(home, new Map([['noisy', { id: 'noisy', projections: 7, savedTokens: 900, originalRecalls: 3 }]]))).toHaveLength(1)
+    const fixture = fileURLToPath(new URL('./fixtures/take-switched-off.ts', import.meta.url))
+    const said = await Promise.all(Array.from({ length: 6 }, () => new Promise<number>((done, fail) => {
+      execFile(process.execPath, ['--conditions=source', fixture, home, 'claude'], (error, stdout) => error ? fail(error) : done(Number(stdout)))
+    })))
+    expect(said.reduce((a, b) => a + b, 0)).toBe(1)
+  }, 30_000)
 
   it('does not say a rolled-back switch-off whose rules match an earlier adoption, once the rules are switched off by hand', () => {
     const home = temp()

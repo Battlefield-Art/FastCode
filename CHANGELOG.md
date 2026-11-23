@@ -20,6 +20,29 @@ allows it (in full on five, assisted on three), and self-evolving filters. (0.1.
   yamllint. Commands whose output has nothing safe to remove (eslint's
   stylish text, rspec, golangci-lint, sops, curl, ssh and others) are left
   whole. Filter runtime `static-v15`.
+- Grok and Copilot outputs too long for the model are filtered too: Grok's log
+  of the whole output (over about 20 KB Grok shows only its first and last
+  10 KB) and the file Copilot saves (over about 19 KB it shows a 500-character
+  preview) are filtered, and the result replaces the cut text when it is
+  shorter. A 160 KB failing test run reaches the model as under 1 KB, failure
+  included.
+- Savings count an output only up to what the agent would have shown its model
+  at once, in the agent's own unit: 30,000 characters in Claude Code and
+  CodeBuddy, 50,000 in Hermes, 48,000 in DeepSeek Harness, 40,000 bytes in
+  Codex (10,000 tokens), 20,000 in Grok, 19,000 in Copilot. Before, one 6.7 MB
+  grep counted whole (Claude Code shows the model 30,000 characters of it) and
+  made a conversation's "tool output X% shorter" look smaller still, and a
+  huge output shortened counted as saved in full. Where the agent shows its own
+  cut, preview or compaction instead (Grok, Copilot), savings count from that:
+  a Copilot output saved to a file counts as the 500-character preview Copilot
+  showed. The card, `tokenwise saved`, the dashboard, the report, rule savings,
+  learning gains and "tokens left" all count this way.
+- pi's footer follows the scan it starts at startup instead of showing the
+  previous scan's "ready to learn" for up to 15 seconds.
+- What an agent has told (a learning run, a switch-off) is kept in the fallback
+  folder when the main one cannot be written, so it is not said again every
+  turn, and is taken under a lock, so two agents ending a turn at once do not
+  both say it.
 - When the monitor switches a learned rule off (the agent kept asking for the
   original output), every agent says so once: on the turn-end card ("Switched
   off: rule …, since …"), at its next start, in DeepSeek Harness's toast, and in

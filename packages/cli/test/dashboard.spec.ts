@@ -74,13 +74,13 @@ describe('what TokenWise saved', () => {
   it('counts only shortened outputs: the original minus what the model read, per day, today and per agent', () => {
     const home = temp()
     journal(home, 'claude', [record('claude', at(0, 9), 4000, 400), record('claude', at(1), 3000, 300), record('claude', at(0, 10), 900, 900, 'passed')])
-    journal(home, 'copilot', [record('copilot', at(6), 2000, 200), record('copilot', at(8), 50000, 1000)])
+    journal(home, 'copilot', [record('copilot', at(6), 2000, 200), record('copilot', at(8), 4700, 100)])
     const week = savingsOf([home], 'week', NOW)
     expect(week).toMatchObject({ tokens: 3600 + 2700 + 1800, outputs: 3, today: 3600, agents: ['claude', 'copilot'] })
     expect(week.buckets).toHaveLength(7)
     expect(week.buckets.map(b => b.tokens)).toEqual([1800, 0, 0, 0, 0, 2700, 3600])
     // Eight days ago is outside the week but inside 30 days, where Copilot saved the most.
-    expect(savingsOf([home], 'month', NOW)).toMatchObject({ tokens: 3600 + 2700 + 1800 + 49000, agents: ['copilot', 'claude'] })
+    expect(savingsOf([home], 'month', NOW)).toMatchObject({ tokens: 3600 + 2700 + 1800 + 4600, agents: ['copilot', 'claude'] })
     expect(savingsOf([home], 'month', NOW).buckets).toHaveLength(30)
     const all = savingsOf([home], 'all', NOW)
     expect(all.buckets.length).toBeGreaterThanOrEqual(6)
@@ -183,8 +183,9 @@ describe('tokenwise dashboard', () => {
     expect(page.body).toContain('<html lang="en">')
     const week = JSON.parse((await get(server, `/api/savings?t=${server.token}&period=week`)).body)
     expect(week.savings).toMatchObject({ tokens: 3600, today: 3600, outputs: 1, agents: ['claude'] })
-    expect(week.all.tokens).toBe(3600 + 9000)
-    expect(JSON.parse((await get(server, `/api/savings?t=${server.token}&period=month`)).body).savings.tokens).toBe(12600)
+    // The 40,000-byte output counts up to the 30,000 characters Claude Code shows its model at once: 7,500 tokens, less the 1,000 read.
+    expect(week.all.tokens).toBe(3600 + 6500)
+    expect(JSON.parse((await get(server, `/api/savings?t=${server.token}&period=month`)).body).savings.tokens).toBe(10100)
   })
 
   it('keeps data from breaking out of the page', () => {

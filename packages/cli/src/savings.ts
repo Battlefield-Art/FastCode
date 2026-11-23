@@ -6,6 +6,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { countedOriginal } from '@tokenwise/protocol'
 
 export type Period = 'week' | 'month' | 'all'
 export const PERIODS: readonly Period[] = ['week', 'month', 'all']
@@ -42,8 +43,15 @@ function fileSavings(path: string): Saving[] {
   for (const line of text.split('\n')) {
     if (!line.includes('"outcome":"projected"')) continue
     try {
-      const r = JSON.parse(line) as { type?: string; time?: string; host?: string; raw?: { tokens?: number }; projected?: { tokens?: number } }
-      const tokens = (r.raw?.tokens ?? 0) - (r.projected?.tokens ?? 0)
+      const r = JSON.parse(line) as { type?: string; time?: string; host?: string; raw?: { bytes?: number; tokens?: number; chars?: number };
+        baseline?: { bytes: number; tokens: number }; projected?: { tokens?: number } }
+      // As summarizeEconomy counts it: up to what the host shows its model at once, or its own cut of it.
+      const raw = r.raw?.tokens ?? 0
+      const counted = typeof r.raw?.bytes === 'number'
+        ? countedOriginal({ ...r.host === undefined ? {} : { host: r.host }, raw: { bytes: r.raw.bytes, tokens: raw, ...r.raw.chars === undefined ? {} : { chars: r.raw.chars } },
+          ...r.baseline ? { baseline: r.baseline } : {} }).tokens
+        : raw
+      const tokens = counted - (r.projected?.tokens ?? 0)
       const at = Date.parse(r.time ?? '')
       if (r.type === 'economy/decision' && tokens > 0 && Number.isFinite(at)) savings.push({ at, host: r.host ?? 'shell', tokens })
     } catch { /* A torn last line. */ }

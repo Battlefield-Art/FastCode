@@ -15,8 +15,16 @@ Verified against Grok Build 1.0.70, in `grok -p` and in `grok agent stdio`
   assertion. Grok fires `PostToolUse` for failed commands too.
 - Only the model's copy changes: Grok's scrollback and `updates.jsonl` keep
   the original, and TokenWise saves it under `~/.tokenwise` as well.
-- Results Grok already cut, results over 128 KiB (which Grok hands to hooks
-  as text) and any layout other than `exit: N\n<output>` pass through.
+- Output over 20 KB, which Grok cuts to its first and last 10 KB (over
+  128 KiB it hands hooks the cut text): TokenWise filters the whole output
+  from Grok's log of it, `<session>/terminal/<call id>.log`, and the model
+  reads the projection instead of the two ends. Only that call's own log is
+  read, and only when it holds the start and end Grok showed; a projection
+  that is not shorter than what Grok shows leaves Grok's cut in place.
+  Verified on Grok 1.0.92 with a 65 KB passing and a 160 KB failing
+  `pytest -v`: the model named the failing test and its assertion.
+- Any layout other than `exit: N\n<output>` (or Grok's cut header) passes
+  through.
 - A background command's output is filtered when the model reads it with
   `get_command_or_subagent_output` and the read holds all of it: the command
   finished (completed or failed, with an exit code), nothing was cut, and the

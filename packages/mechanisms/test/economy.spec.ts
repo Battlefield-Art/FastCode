@@ -141,6 +141,33 @@ describe('normalizeShellCommand and summaries', () => {
     // Every output seen counts toward the share, shortened or not.
     expect(summary.seenTokens).toBe(records.filter(r => r.type === 'economy/decision').reduce((n, r) => n + ((r as EconomyRecord).raw?.tokens ?? 0), 0))
   })
+
+  it('counts an original only up to what the host shows its model at once', () => {
+    const decision = (host: string, outcome: 'passed' | 'projected', bytes: number, projected?: number): EconomyRecord => ({
+      schemaVersion: 1, type: 'economy/decision', time: '2026-11-23T00:00:00.000Z', host, sessionId: 's', callId: `c${bytes}`,
+      tool: 'bash', command: 'grep -rn x .', exitCode: 0, outcome, mode: 'apply', delivery: 'command-wrapper', streams: 'merged',
+      raw: { bytes, tokens: bytes / 4, stored: true }, ...projected === undefined ? {} : { projected: { bytes: projected, tokens: projected / 4 } },
+    } as unknown as EconomyRecord)
+    // Claude Code shows 30,000 characters of a Bash output at once; a 6.7 MB grep counted whole made a session's share look tiny.
+    const big = summarizeEconomy([decision('claude', 'passed', 6_686_500)])
+    expect(big.seenTokens).toBe(7500)
+    // Shortened from 120,000 bytes to 2,000: saved what the model would have read, 30,000 bytes' worth, less what it read.
+    const cut = summarizeEconomy([decision('claude', 'projected', 120_000, 2000)])
+    expect(cut).toMatchObject({ seenTokens: 7500, rawTokens: 7500, savedTokens: 7000, savedBytes: 28_000 })
+    expect(cut.byFilter[0]?.savedTokens).toBe(7000)
+    // A projection the host would cut too saved nothing.
+    expect(summarizeEconomy([decision('claude', 'projected', 120_000, 40_000)]).savedTokens).toBe(0)
+    // Under the limit, and on hosts that only hand TokenWise what they already cut, the original counts whole.
+    expect(summarizeEconomy([decision('claude', 'projected', 20_000, 2000)]).savedTokens).toBe(4500)
+    expect(summarizeEconomy([decision('pi', 'projected', 120_000, 2000)]).savedTokens).toBe(29_500)
+    // Copilot showed a preview of 900 bytes instead: that is what counts, and a longer projection saved nothing.
+    const previewed = { ...decision('copilot', 'projected', 120_000, 2000), baseline: { sha256: 'p', bytes: 900, tokens: 225 } } as EconomyRecord
+    expect(summarizeEconomy([previewed])).toMatchObject({ seenTokens: 225, savedTokens: 0, savedBytes: 0 })
+    // Records written now carry their length in characters, the unit Claude Code's limit is in.
+    const { engine, records } = setup()
+    engine.process({ sessionId: 's', callId: 'c', tool: 'bash', result: shell('grep -rn value src', grep(200)) })
+    expect((records[0] as EconomyRecord)).toMatchObject({ outcome: 'projected', raw: { chars: grep(200).length } })
+  })
 })
 
 describe('prepare and commit', () => {

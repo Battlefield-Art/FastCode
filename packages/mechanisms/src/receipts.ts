@@ -1,4 +1,5 @@
 import { toolArgv } from '@tokenwise/core'
+import { countedOriginal } from '@tokenwise/protocol'
 import type { EconomyRecord, JournalRecord } from '@tokenwise/protocol'
 
 export interface EconomySummary {
@@ -7,10 +8,10 @@ export interface EconomySummary {
   readonly previewed: number
   readonly passed: number
   readonly failedOpen: number
-  /** Applied projections only. */
+  /** Applied projections only. Originals count up to what the host shows its model at once (see shownTokens). */
   readonly rawTokens: number
   readonly projectedTokens: number
-  /** Every output decided on, shortened or not: what the model would have read without TokenWise. */
+  /** Every output decided on, shortened or not: what the model would have read without TokenWise (up to what the host shows at once). */
   readonly seenTokens: number
   readonly savedTokens: number
   readonly savedBytes: number
@@ -27,7 +28,7 @@ const ranked = <T extends { count: number }>(map: Map<string, T>) => [...map.val
 
 export function summarizeEconomy(records: Iterable<JournalRecord>): EconomySummary {
   let decisions = 0, projected = 0, previewed = 0, passed = 0, failedOpen = 0, rewrites = 0
-  let rawTokens = 0, projectedTokens = 0, savedBytes = 0, previewSavedTokens = 0, seenTokens = 0
+  let rawTokens = 0, projectedTokens = 0, savedTokens = 0, savedBytes = 0, previewSavedTokens = 0, seenTokens = 0
   const filters = new Map<string, { filter: string; count: number; savedTokens: number }>()
   const reasons = new Map<string, { reason: string; count: number }>()
   const uncovered = new Map<string, { command: string; count: number; rawTokens: number }>()
@@ -36,20 +37,25 @@ export function summarizeEconomy(records: Iterable<JournalRecord>): EconomySumma
     if (item.type !== 'economy/decision') continue
     const record = item as EconomyRecord
     decisions++
-    seenTokens += record.raw?.tokens ?? 0
+    // An original longer than the host shows its model at once counts only that much: the rest it would never have read.
+    const counted = record.raw ? countedOriginal({ ...record, raw: record.raw }) : undefined
+    const shown = counted?.tokens ?? 0
+    seenTokens += shown
     if (record.outcome === 'projected' && record.raw && record.projected) {
       projected++
-      rawTokens += record.raw.tokens
+      rawTokens += shown
       projectedTokens += record.projected.tokens
-      savedBytes += record.raw.bytes - record.projected.bytes
+      const saved = Math.max(0, shown - record.projected.tokens)
+      savedTokens += saved
+      savedBytes += Math.max(0, counted!.bytes - record.projected.bytes)
       const key = record.filter ?? 'unknown'
       const entry = filters.get(key) ?? { filter: key, count: 0, savedTokens: 0 }
       entry.count++
-      entry.savedTokens += record.raw.tokens - record.projected.tokens
+      entry.savedTokens += saved
       filters.set(key, entry)
     } else if (record.outcome === 'previewed') {
       previewed++
-      if (record.raw && record.projected) previewSavedTokens += record.raw.tokens - record.projected.tokens
+      if (record.raw && record.projected) previewSavedTokens += Math.max(0, shown - record.projected.tokens)
     } else if (record.outcome === 'failed-open') failedOpen++
     else {
       passed++
@@ -61,13 +67,13 @@ export function summarizeEconomy(records: Iterable<JournalRecord>): EconomySumma
         const head = toolArgv(record.command)?.[0] ?? record.command.trim().split(/\s+/)[0] ?? ''
         const miss = uncovered.get(head) ?? { command: head, count: 0, rawTokens: 0 }
         miss.count++
-        miss.rawTokens += record.raw?.tokens ?? 0
+        miss.rawTokens += shown
         uncovered.set(head, miss)
       }
     }
   }
   return { decisions, projected, previewed, passed, failedOpen, rawTokens, projectedTokens, seenTokens,
-    savedTokens: rawTokens - projectedTokens, savedBytes, previewSavedTokens,
+    savedTokens, savedBytes, previewSavedTokens,
     byFilter: ranked(filters).map(item => ({ ...item })), passReasons: ranked(reasons), uncovered: ranked(uncovered).slice(0, 20), rewrites }
 }
 

@@ -38,16 +38,18 @@ export function conversationNotice(host: string, sessionId: string | undefined, 
   const context = cliContext({ env })
   const savings = untoldSavings(id => context.readJournal({ host, sessionId: id }), context.dataDirs, host, sessionId)
   const writable = options.peek ? undefined : context.writable()
-  // Peeked first: only a card that is shown (or marked told) uses it up.
-  const news = adoptionNews(context.dataDir, host, true)
+  // What was told is read from every data folder and kept in the first that takes it. Unless peeking, the row is
+  // taken (under a lock) before the card is made: a card with a row is always shown, and of two agents ending a turn
+  // at once only one gets it.
+  const take = !options.peek
+  const news = adoptionNews(context.dataDir, host, !take, context.dataDirs)
   // Else a learned rule the monitor switched off since: one row a turn, the other waits for the next card.
-  const off = news ? [] : takeSwitchedOff(context.dataDir, host, true)
+  const off = news ? [] : takeSwitchedOff(context.dataDir, host, !take, undefined, context.dataDirs)
   const row = news ? learnedNews(host, news) : off.length ? { label: 'Switched off:', text: switchedOffNews(host, off) } : undefined
   const style = CARD_STYLE[host] ?? {}
   const line = savedCard(savings, env.NO_COLOR ? { ...style, color: false } : style, row)
   if (!line) return undefined
-  if (writable && savings) markSavingsTold(writable.dataDir, host, sessionId, savings.savedTokens)
-  if (writable && news) adoptionNews(writable.dataDir, host)
-  if (writable && off.length) takeSwitchedOff(writable.dataDir, host)
+  // The row is taken already: a failure here must not lose the card (the number is then said again next time).
+  if (writable && savings) { try { markSavingsTold(writable.dataDir, host, sessionId, savings.savedTokens) } catch { /* Said again later. */ } }
   return options.told ? undefined : line
 }

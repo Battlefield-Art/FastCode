@@ -1,5 +1,6 @@
 import { createPolicy, decideShellProjection, estimateTokens as defaultEstimate, looksUp, readsFileContent, sha256 } from '@tokenwise/core'
 import type { EconomyPolicy, LearnedRuleSet, ShellResult, TokenEstimator } from '@tokenwise/core'
+import { HOST_PROFILES, shownTokens } from '@tokenwise/protocol'
 import type { ArtifactPort, EconomyRecord, JournalRecord } from '@tokenwise/protocol'
 
 /**
@@ -184,14 +185,16 @@ export interface ReplayRow {
  * engine (`maxProjectedChars`): a longer projection passes at runtime, so it
  * saves nothing in replay either.
  */
-export const HOST_INLINE_LIMITS: Readonly<Record<string, number>> = Object.freeze({ dsh: 48_000 })
+export const HOST_INLINE_LIMITS: Readonly<Record<string, number>> = Object.freeze({ dsh: HOST_PROFILES.dsh!.inlineChars! })
 
 /** s_pi(e): replay one observation through the full decision (filters, stream policy, admission, the host's inline limit). */
 export function replayCase(policy: EconomyPolicy, item: { id: string; result: ShellResult; host?: string },
   options: { minimumSavedTokens?: number; estimateTokens?: TokenEstimator } = {}): ReplayRow {
   const estimate = options.estimateTokens ?? defaultEstimate
   const decision = decideShellProjection(item.result, { policy, minimumSavedTokens: options.minimumSavedTokens ?? 16, estimateTokens: estimate })
-  const rawTokens = estimate(item.result.rendered)
+  // As the savings count it: an original longer than its host shows the model at once counts only that much.
+  const rendered = item.result.rendered
+  const rawTokens = shownTokens(item.host, { bytes: Buffer.byteLength(rendered, 'utf8'), chars: rendered.length, tokens: estimate(rendered) })
   if (decision.kind === 'pass') {
     return { id: item.id, reason: decision.reason, ...decision.filter ? { filter: decision.filter } : {}, ...decision.rule ? { rule: decision.rule } : {},
       rawTokens, saving: 0, delivered: item.result.rendered }
@@ -202,7 +205,7 @@ export function replayCase(policy: EconomyPolicy, item: { id: string; result: Sh
       saving: 0, delivered: item.result.rendered }
   }
   return { id: item.id, reason: 'projected', filter: decision.filter, ...decision.rule ? { rule: decision.rule } : {}, rawTokens,
-    saving: decision.rawTokens - decision.projectedTokens, delivered: decision.text }
+    saving: Math.max(0, rawTokens - decision.projectedTokens), delivered: decision.text }
 }
 
 /** A preservation requirement: for this output, whatever a policy delivers must contain every fragment. */

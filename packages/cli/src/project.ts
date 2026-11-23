@@ -23,6 +23,8 @@ export interface OutputRequest {
   readonly env?: NodeJS.ProcessEnv
   /** A projection this long or longer passes instead (the host already delivers something as short). */
   readonly maxProjectedChars?: number
+  /** What the host would show the model without TokenWise, when it already cut, previewed or compacted the output. */
+  readonly hostShown?: string
 }
 
 /**
@@ -43,7 +45,8 @@ export function projectOutput(request: OutputRequest): { stdout: string; stderr?
   const rules = new RuleStore(context.dataDir)
   const engine = new EconomyEngine({ host: request.host, journal: store.journal, artifacts: store.artifacts,
     config: config.economy, mode: config.economy.mode, delivery: request.delivery, streams: separate ? 'separate' : 'merged',
-    learned: () => rules.load(), ...request.maxProjectedChars === undefined ? {} : { maxProjectedChars: request.maxProjectedChars } })
+    learned: () => rules.load(), ...request.maxProjectedChars === undefined ? {} : { maxProjectedChars: request.maxProjectedChars },
+    ...request.hostShown === undefined ? {} : { hostShown: request.hostShown } })
   const base = { command: request.command, exitCode: request.exitCode, interrupted: request.interrupted, ...request.truncated ? { truncated: true } : {} }
   const process = (result: ShellResult) => engine.process({ sessionId: request.sessionId, callId: request.callId, tool: request.tool, result }).text
   const stdout = request.stdout === '' ? undefined : process({ ...base, rendered: request.stdout, stdout: { start: 0, text: request.stdout } })

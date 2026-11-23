@@ -172,7 +172,8 @@ const ring = AG.map(([id, name, color], i) => {
 })
 
 // Scene 3: one agent window after another, each ending with the card TokenWise shows there.
-const CARDS = [['claude-code', 1999, 91], ['codex', 954, 83], ['pi', 3464, 96], ['opencode', 2077, 89], ['copilot', 1479, 98], ['grok', 2402, 78], ['codebuddy', 1583, 89], ['hermes', 1905, 88], ['dsh', 12297, 69]]
+// The real cards (2026-11-22): one coding task per agent, from scratch (a ledger CLI, 40+ tests run as plain `pytest -v`), as the README's card wall shows them.
+const CARDS = [['claude-code', 3213, 79], ['codex', 1408, 89], ['pi', 4305, 79], ['opencode', 3149, 74], ['copilot', 6129, 72], ['grok', 3038, 27], ['codebuddy', 3268, 59], ['hermes', 2123, 90], ['dsh', 4840, 60]]
 const SLOTS = []
 { let t = 14.4; CARDS.forEach((_, i) => { const d = i < 3 ? 1.9 : .55; SLOTS.push([t, t + d]); t += d }) }
 const cardHtml = (n, share, k) => {

@@ -145,8 +145,11 @@ When an answer ends and the conversation saved more than when it was last
 said, each host shows a small card: the tokens saved in the conversation (its
 subagents included) and how much shorter that made all the tool output
 TokenWise saw. The tokens saved are what the shortened outputs saved: each
-original minus what the model read. `tokenwise saved` and the dashboard count
-the same way. `tokenwise report` also lists what TokenWise itself put in front
+original minus what the model read. An original longer than the host shows its
+model at once (Claude Code's 30,000 characters, for one; `inlineChars` or
+`inlineBytes` in @tokenwise/protocol's host profiles) counts only up to that, in what was saved
+and in all the output seen: the model would never have read the rest.
+`tokenwise saved` and the dashboard count the same way. `tokenwise report` also lists what TokenWise itself put in front
 of the model (@tokenwise/mechanisms `overheadOf`), and the net: its text in
 every request (the recall tool's definition, and the skill's listing on
 OpenCode and Hermes, which cannot keep the skill for the person alone) once per

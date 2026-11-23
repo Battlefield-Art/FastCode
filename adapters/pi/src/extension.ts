@@ -20,7 +20,7 @@ import {
   repeatReadCandidate, savedCard, takeAnnouncement, untoldSavings, adoptionNews, switchedOffNow, switchedOffPhrase, switchedOffPronoun, takeSwitchedOff,
 } from '@tokenwise/mechanisms'
 import type { BackgroundOptions, EvolveStatus, Prepared } from '@tokenwise/mechanisms'
-import { HOST_PROFILES, V0_2_SPECS, negotiate } from '@tokenwise/protocol'
+import { HOST_PROFILES, V0_2_SPECS, negotiate, shownTokens } from '@tokenwise/protocol'
 import type { MechanismMode, Negotiation } from '@tokenwise/protocol'
 import { FileArtifactStore, FileJournal, RuleStore, collectDaily, dataDirs, loadConfig, readJournals, resolveDataDir, writableDataDir } from '@tokenwise/store'
 import type { LoadedConfig } from '@tokenwise/store'
@@ -145,9 +145,13 @@ export function createTokenWiseExtension(options: TokenWisePiOptions = {}) {
       watch(ctx)
       return { ok: true, text: `Learning with ${learner.label} in the background. Keep working; TokenWise tells you when it is done.` }
     }
-    /** The footer and announcements follow learning runs: every second while one runs, every 15 s otherwise. */
+    /**
+     * The footer and announcements follow learning runs: every second while one runs, or while the scan started at
+     * startup has not replaced the old one (whose badge may no longer hold), every 15 s otherwise.
+     */
     let watchTimer: ReturnType<typeof setTimeout> | undefined
     let wasRunning = false
+    let scanWait: { readonly before: string | undefined; readonly until: number } | undefined
     const announce = (ctx: ExtensionContext) => {
       if (!ctx.hasUI) return
       const run = takeAnnouncement(configDir, HOST)
@@ -163,7 +167,8 @@ export function createTokenWiseExtension(options: TokenWisePiOptions = {}) {
       if (state) showStatus(ctx, state, status)
       if (wasRunning && !running) announce(ctx)
       wasRunning = running
-      watchTimer = setTimeout(() => watch(ctx), running ? 1000 : 15_000)
+      if (scanWait && (status?.scan?.time !== scanWait.before || Date.now() > scanWait.until)) scanWait = undefined
+      watchTimer = setTimeout(() => watch(ctx), running || scanWait ? 1000 : 15_000)
       watchTimer.unref?.()
     }
     const pid = options.pid ?? process.pid
@@ -243,7 +248,10 @@ export function createTokenWiseExtension(options: TokenWisePiOptions = {}) {
       if (!ctx.hasUI || !state.engine) return
       announce(ctx)
       const runnerOptions = background()
-      if (!('unavailable' in runnerOptions)) { try { refreshScan(configDir, runnerOptions) } catch { /* The panel says what it can. */ } }
+      const before = evolveStatus()?.scan?.time
+      if (!('unavailable' in runnerOptions)) {
+        try { if (refreshScan(configDir, runnerOptions)) scanWait = { before, until: Date.now() + 60_000 } } catch { /* The panel says what it can. */ }
+      }
       watch(ctx)
     })
 
@@ -258,16 +266,15 @@ export function createTokenWiseExtension(options: TokenWisePiOptions = {}) {
       try {
         const savings = untoldSavings(read, readDirs, HOST, sessionId)
         // Once after a learning run adopted rules (and the run's own toast has not said so), the card says what TokenWise just learned.
-        const news = adoptionNews(configDir, HOST, true)
+        // Taken (under a lock) before the card is made, which a row always gets: of two pi sessions ending at once, one says it.
+        const news = adoptionNews(configDir, HOST, false, readDirs)
         // Else a learned rule the monitor switched off since: one row a turn.
-        const off = news ? [] : takeSwitchedOff(configDir, HOST, true)
+        const off = news ? [] : takeSwitchedOff(configDir, HOST, false, undefined, readDirs)
         const row = news ? `${news} for every agent (/tokenwise to see or undo)`
           : off.length ? { label: 'Switched off:', text: `${switchedOffPhrase(off)} (/tokenwise to see or bring ${switchedOffPronoun(off)} back)` } : undefined
         const frame = (progress: number) => savedCard(savings, { color: !env.NO_COLOR, lines: true, progress }, row)?.split('\n')
         if (!frame(1)) return
-        if (savings) markSavingsTold(dataDir, HOST, sessionId, savings.savedTokens)
-        if (news) adoptionNews(configDir, HOST)
-        if (off.length) takeSwitchedOff(configDir, HOST)
+        if (savings) { try { markSavingsTold(dataDir, HOST, sessionId, savings.savedTokens) } catch { /* Said again later. */ } }
         stopCard()
         const started = Date.now()
         ctx.ui.setWidget(CARD_WIDGET, frame(0))
@@ -378,7 +385,7 @@ export function createTokenWiseExtension(options: TokenWisePiOptions = {}) {
         if (committed.text === undefined) continue
         drafts.push({ type: 'context_edit' as const, targetId, replacement: { content: [{ type: 'text' as const, text: committed.text }] } })
         session.projected++
-        session.savedTokens += prepared.record.raw!.tokens - prepared.record.projected!.tokens
+        session.savedTokens += Math.max(0, shownTokens(HOST, prepared.record.raw!) - prepared.record.projected!.tokens)
       }
       if (drafts.length === 0) return
       showStatus(ctx, session)

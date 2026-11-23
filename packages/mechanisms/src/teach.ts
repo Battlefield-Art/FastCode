@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { compileLearnedRules, createPolicy, looksUp, parseRuleIndex, readsFileContent, sha256 } from '@tokenwise/core'
 import type { LearnedRuleSet } from '@tokenwise/core'
+import { countedOriginal } from '@tokenwise/protocol'
 import type { EconomyRecord, JournalRecord } from '@tokenwise/protocol'
 import { ensurePrivateDir, RuleStore, readRuleDirectory, removeTree } from '@tokenwise/store'
 import { collectEvidence, commandHead, replayCase, scriptRun } from './evolution.ts'
@@ -125,7 +126,8 @@ export function checkup(context: EvolveContext, now = new Date()): Checkup {
     if (since === undefined || record.time < since) since = record.time
     if (record.outcome !== 'projected' || !record.raw || !record.projected) continue
     shortened++
-    raw += record.raw.tokens
+    // As the savings count it (see shownTokens).
+    raw += countedOriginal({ ...record, raw: record.raw }).tokens
     read += record.projected.tokens
     if (record.filter === 'learned-rule' && record.rule) {
       byLearned++

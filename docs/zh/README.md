@@ -2,46 +2,55 @@
 
 <h1>
   <img src="../../docs/assets/logo.svg" width="48" height="48" align="absmiddle" alt="">
-  TokenWise：让 agent 的每个 token 都物有所值
+  TokenWise：自进化上下文，<br> 最多节省 50% Token
 </h1>
 
 <p>
   <a href="../../LICENSE"><img alt="许可证：MIT" src="https://img.shields.io/badge/license-MIT-0A7A69?style=flat-square&labelColor=071E1B"></a>
   <img alt="支持 9 个 agent 和任意 shell" src="https://img.shields.io/badge/agents-9_%2B_any_shell-0A7A69?style=flat-square&labelColor=071E1B">
+  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/Feishu-Group-E9DBFC?style=flat-square&logo=feishu&logoColor=white" alt="飞书群"></a>
+  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/WeChat-Group-C5EAB4?style=flat-square&logo=wechat&logoColor=white" alt="微信群"></a>
 </p>
 
 [English](../../README.md) · **简体中文**
 
-### 给 AI agent 用的自进化省 token 层
-
 </div>
-
-<p align="center"><a href="https://youtu.be/9p36ZR2rNtE"><img src="../../media/video/promo.gif" alt="TokenWise 在 9 个 agent 里：噪音变成硬币，每次回答结束都显示省了多少，一周下来越省越多" width="100%"></a></p>
-<p align="center"><sub>▶ <a href="https://youtu.be/9p36ZR2rNtE">在 YouTube 上观看宣传视频</a> · 35 秒</sub></p>
-
-## 为什么需要 TokenWise？
-
-**agent 读进去的每个 token 都要花钱，而其中很多是噪音。**
-
-今天的 agent 面临：
-- 🗑️ **上下文冗余**：大量重复、无关的信息挤占上下文，推高成本。
-- 📈 **上下文膨胀**：对话越长，每一轮都要为越积越多的内容重复付费。
-- 🔒 **规则僵化**：现有优化靠固定规则，跟不上你的项目。
-- 🧩 **各自为战**：每个 agent 各管各的，优化无法共享。
-
-**TokenWise 把噪音挡在外面，模型只读它需要的部分。**
-
-- **节省可视化**：实时展示每次对话节省的 token。
-- **越用越省**：学习出新的优化机制。
-- **跨平台适配**：适用于多个 agent 平台。
-
-## 📊 效果
 
 <p align="center"><img src="../../media/images/savings-zh.png" alt="算法开发与调试（迭代式的问题修复与算法改进）最多节省 38% token；长程软件工程（跨大型多模块代码库的系统级工程）最多节省 50%；海量资料问答（对长文档与长历史的深度推理）最多节省 45%。自进化释放更多节省：TokenWise 从真实工作流中学习，随着使用，token 消耗再额外减少 27%。" width="100%"></p>
 
-<sub>数据来自我们论文的评测，论文即将公开。</sub>
+## 为什么需要 TokenWise？
 
-## 🤖 支持的 agent
+**问题：AI agent 读进去的每个 token 都要付费，包括那些它根本用不上的。**
+
+- 🗑️ **冗余和无关的 token**
+  - 重复的指令、日志和工具输出
+  - 过时的信息，干扰 agent 的判断
+
+- 📈 **不断增长的 token 成本**
+  - 每一次交互，上下文都在变长
+  - 每一轮都要为累积下来的历史重新付费
+
+- 🧠 **上下文不会自我进化**
+  - 固定规则学不会不断变化的工作流
+  - 每个 agent 都从头开始，无法复用已经验证有效的做法
+
+---
+
+### TokenWise 的做法
+
+- ✂️ **少读一些，留住关键。**  
+  在噪音到达模型之前把它去掉，同时保留任务所需的关键上下文。
+
+- 🧠 **随每个工作流一起进化。**  
+  从真实使用中学习，适应新的工具、命令和上下文。
+
+- 🔄 **学一次，所有 agent 都受益。**  
+  在不同 agent 和平台之间共享验证有效的优化策略。
+
+- 📊 **省下的每个 token 都看得见。**  
+  实时显示每次回答和累计节省的 token。
+
+## 🤖 即插即用，直接装进你在用的 agent
 
 <table width="100%">
   <tr>
@@ -61,44 +70,72 @@
   </tr>
 </table>
 
-支持 macOS 和 Linux。每个 agent 按它的插件接口允许的方式接入，深度略有不同，详见下方的[各 agent 的接入方式](#各-agent-的接入方式)。
 
-## 🪙 看到省了多少
+## 🪙 看看 TokenWise 省了多少
+
+**每次回答结束，agent 里都会直接显示省下的 token 数和减少的比例。**
 
 <p align="center"><img src="../../media/images/cards-zh.png" alt="Claude Code、Codex、GitHub Copilot CLI、Hermes Agent、OpenCode、CodeBuddy、Grok Build、DeepSeek Harness 和 pi 里回答结束时的卡片" width="100%"></p>
 
-<sub>数字来自每个 agent 的一次真实运行。</sub>
+<sub>结果来自每个 agent 的一次真实运行。</sub>
 
 ## 🚀 开始使用
 
-把这个仓库交给你的 agent，说：
+### 让 agent 帮你装（推荐）
 
-> 帮我给这台电脑上所有的 agent 装上 TokenWise，并确认每个都在用它。
+把下面这段话粘贴给你的 agent：
 
-装好就生效，不用任何配置。想教它处理你自己的命令，在 agent 里输入 `/tokenwise`（Codex 里是 `$tokenwise`，OpenCode 和 DeepSeek Harness 里是 `@tokenwise`，pi 里是 `/skill:tokenwise`）。
+```bash
+给这台电脑上所有支持的 agent 装上 TokenWise，并逐个确认接入正常。
 
-也可以自己装（需要 Node.js 22 和 pnpm；TokenWise 还没发布到 npm）：
-
-```sh
-git clone https://github.com/HKUDS/TokenWise.git
-cd TokenWise && pnpm install && pnpm build
-npm install -g ./packages/cli
-tokenwise setup        # 自动找到本机的 agent，逐个装好
-tokenwise doctor --probe   # 让每个 agent 跑一条命令，确认 TokenWise 看到了
+仓库：https://github.com/HKUDS/TokenWise
 ```
 
-## 📰 动态
+从下一条命令开始，TokenWise 就会生效，不需要任何配置。
 
-- **2026-11** · 9 个 agent 每次回答结束都显示 TokenWise 省了多少；新 logo，以及一段 35 秒的视频。
-- **2026-10** · TokenWise 开源：每个 agent 里都能发起自进化，一条命令完成安装。
+想添加自定义的优化规则，在 agent 里调用 TokenWise：
+
+```bash
+/tokenwise          # Claude Code 及其他支持的 agent
+$tokenwise          # Codex
+@tokenwise          # OpenCode 和 DeepSeek Harness
+/skill:tokenwise    # pi
+```
+
+### 手动安装
+
+环境要求：**Node.js 22** 和 **pnpm**。
+
+```bash
+# 克隆并编译 TokenWise
+git clone https://github.com/HKUDS/TokenWise.git
+cd TokenWise
+pnpm install
+pnpm build
+
+# 全局安装 CLI
+npm install -g ./packages/cli
+
+# 找到本机的 agent，逐个装上 TokenWise
+tokenwise setup
+
+# 验证每个 agent 的接入
+tokenwise doctor --probe
+```
+
+<p align="center"><a href="https://youtu.be/9p36ZR2rNtE"><img src="../../media/video/promo.gif" alt="TokenWise 在 9 个 agent 里：噪音变成硬币，每次回答结束都显示省了多少，一周下来越省越多" width="100%"></a></p>
+<p align="center"><sub>▶ <a href="https://youtu.be/9p36ZR2rNtE">在 YouTube 上观看视频</a> · 35 秒</sub></p>
+
+支持 **macOS 和 Linux**。不同 agent 的接入深度不同，详见[各 agent 的接入方式](#各-agent-的接入方式)。
 
 ## 接下来
+- **更多 agent**：Cursor、Gemini CLI、Kimi Code 等。
+- **共享上下文学习**：把验证有效的上下文策略迁移到其他 agent。
+- **任务感知的上下文**：针对编程、研究和长时间运行的任务调整上下文。
+- **上下文可观测**：展示删掉了什么、保留了什么，以及原因。
+- **兼顾效果的优化**：在保留任务关键上下文的同时，节省更多 token。
 
-- 接入更多 agent：Cursor、Gemini CLI、Kimi Code 等。
-- 为常用工具补充更多内置规则，每一条都在真实输出上验证。
-- 发布 TokenWise 背后的论文和完整评估。
-
-## 给 agent 和想深入了解的人
+## 给 agent 读的安装与接入说明
 
 <details>
 <summary><strong>逐个 agent 手动安装</strong></summary>
@@ -124,13 +161,13 @@ mkdir -p ~/.hermes/plugins
 cp -R adapters/hermes/tokenwise ~/.hermes/plugins/tokenwise
 hermes plugins enable tokenwise && hermes config set context.engine tokenwise
 
-# 其他任何 agent：用它包一层命令
-tokenwise run -c 'cargo test'
-
 # tokenwise skill：复制到各个 agent 读取 skill 的目录
 cp -R skills/tokenwise ~/.claude/skills/            # Claude Code；~/.codebuddy/skills、~/.grok/skills、
                                                     # ~/.config/opencode/skills、~/.hermes/skills、~/.copilot/skills 同理
 cp -R skills/tokenwise ~/.agents/skills/            # Codex、pi 和 DeepSeek Harness
+
+# 其他任何 agent 或 shell：用它包一层命令
+tokenwise run -c 'cargo test'
 ```
 
 `tokenwise setup` 会替你执行这些命令；`tokenwise setup --dry-run` 只打印不执行。
@@ -194,4 +231,4 @@ cp -R skills/tokenwise ~/.agents/skills/            # Codex、pi 和 DeepSeek Ha
 
 [架构](../architecture.md) · [接入新 agent](../adapters.md) · [更新日志](../../CHANGELOG.md) · [宣传素材](../../media/README.md) · [MIT 许可证](../../LICENSE)
 
-<sub>图标来自 <a href="https://www.flaticon.com/authors/magnific">Magnific</a> / <a href="https://www.flaticon.com/">Flaticon</a>（Icons made by <a href="https://www.magnific.com" title="Magnific">Magnific</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>）；agent 图标归各产品所有，来源见 <a href="../../media/agents/NOTICE.md">media/agents/NOTICE.md</a>。</sub>
+<sub>图标由 Magnific 制作，来自 Flaticon（Icons made by <a href="https://www.magnific.com" title="Magnific">Magnific</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>）。agent 图标归各产品所有，来源见 <a href="../../media/agents/NOTICE.md">media/agents/NOTICE.md</a>。</sub>

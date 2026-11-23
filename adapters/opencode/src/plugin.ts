@@ -140,15 +140,16 @@ export function createTokenWise(options: TokenWiseOpenCodeOptions = {}): (input:
         // else, once, a learned rule the monitor switched off since.
         await showNotice(client, async () => {
           savings = untoldSavings(read, dirs, HOST, sessionId)
-          news = adoptionNews(configDir, HOST, true)
-          const switched = news ? [] : takeSwitchedOff(configDir, HOST, true)
+          // Peeked: a toast may not reach the screen, so the row is taken once it did (told state in every data folder).
+          news = adoptionNews(configDir, HOST, true, dirs)
+          const switched = news ? [] : takeSwitchedOff(configDir, HOST, true, undefined, dirs)
           off = switched
           return savedCard(savings, { lines: true, untitled: true }, news ? `${news} for every agent (@tokenwise to see or undo)`
             : switched.length ? { label: 'Switched off:', text: `${switchedOffPhrase(switched)} (@tokenwise to see or bring ${switchedOffPronoun(switched)} back)` } : undefined)
         }, async () => {
           if (savings) markSavingsTold(dataDir, HOST, sessionId, savings.savedTokens)
-          if (news) adoptionNews(configDir, HOST)
-          if (off.length) takeSwitchedOff(configDir, HOST)
+          if (news) adoptionNews(configDir, HOST, false, dirs)
+          if (off.length) takeSwitchedOff(configDir, HOST, false, undefined, dirs)
         }, 8_000)
       } finally { saying.delete(sessionId) }
     }

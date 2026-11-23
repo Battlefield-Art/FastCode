@@ -30,6 +30,8 @@ export interface TextMeasure {
   readonly sha256: string
   readonly bytes: number
   readonly tokens: number
+  /** UTF-16 code units, as JavaScript counts a string's length (records before 0.3 lack it). */
+  readonly chars?: number
 }
 
 export type EconomyOutcome = 'projected' | 'previewed' | 'passed' | 'failed-open'
@@ -65,6 +67,11 @@ export interface EconomyRecord extends JournalBase {
    * for `tokenwise evolve` is kept).
    */
   readonly raw?: TextMeasure & { readonly stored: boolean }
+  /**
+   * What the host itself shows the model without TokenWise when that is not the original: its own cut, preview or
+   * compaction of it (Grok, Copilot). Savings count from this, never from more.
+   */
+  readonly baseline?: TextMeasure
   /** Where stdout (and stderr, when the host keeps it apart) sit in the original, in UTF-16 units. */
   readonly layout?: { readonly stdout: StreamSpan; readonly stderr?: StreamSpan; readonly truncated?: true; readonly interrupted?: true }
   readonly projected?: TextMeasure
